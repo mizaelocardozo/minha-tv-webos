@@ -144,7 +144,12 @@ def install_app(tv_ip, passphrase=None, profile=None):
         # once without forcing a PTY so the command itself still goes through.
         if force_pty and "PTY allocation request failed" in (res.stderr or ""):
             print("[*] A TV recusou o PTY; tentando de novo sem ele...")
-            res = subprocess.run(["ssh", *ssh_opts, "-p", "9922", "-i", dec_key, f"prisoner@{tv_ip}", remote_cmd], capture_output=True, text=True)
+            # Sem PTY, o luna-send-pub só responde com a entrada vinda de /dev/null e a saída num
+            # arquivo; e o BusyBox antigo (webOS 3.x) usa "timeout -t SEGUNDOS".
+            out = "/media/developer/temp/luna-out.txt"
+            no_pty_cmd = ('if timeout -t 1 true 2>/dev/null; then TO="timeout -t"; else TO="timeout"; fi; '
+                          + remote_cmd.replace("timeout ", "$TO ", 1) + f" < /dev/null > {out} 2>&1; cat {out}")
+            res = subprocess.run(["ssh", *ssh_opts, "-p", "9922", "-i", dec_key, f"prisoner@{tv_ip}", no_pty_cmd], capture_output=True, text=True)
         return res
 
     print("[*] Instalando o pacote na TV...")
@@ -167,7 +172,7 @@ def install_app(tv_ip, passphrase=None, profile=None):
         launch_payload["params"] = {"tmdbKey": tmdb_key}
         print("[*] Enviando a chave TMDB para o catálogo...")
     launch_payload = json.dumps(launch_payload)
-    launch_remote_cmd = f"luna-send-pub -n 1 luna://com.webos.applicationManager/launch '{launch_payload}'"
+    launch_remote_cmd = f"timeout 15 luna-send-pub -n 1 luna://com.webos.applicationManager/launch '{launch_payload}'"
     launch_res = run_luna(launch_remote_cmd)
     if '"returnValue":true' not in launch_res.stdout:
         print("[!] Instalou, mas não abriu. Saída:")

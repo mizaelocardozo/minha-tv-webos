@@ -1093,6 +1093,75 @@
             margin-top: 6px;
         }
     </style>
+    <script>
+        // --- Compatibilidade com TVs antigas (ex.: webOS 3.x, Chromium 38) ---
+        // Só age quando falta o recurso; em TVs novas nada muda.
+        (function() {
+            if (window.NodeList && !NodeList.prototype.forEach) NodeList.prototype.forEach = Array.prototype.forEach;
+            if (!Element.prototype.closest) {
+                Element.prototype.closest = function(selector) {
+                    for (var el = this; el && el.nodeType === 1; el = el.parentNode) {
+                        if ((el.matches || el.webkitMatchesSelector).call(el, selector)) return el;
+                    }
+                    return null;
+                };
+            }
+            if (typeof window.fetch !== 'function') {
+                window.fetch = function(url, opts) {
+                    opts = opts || {};
+                    return new Promise(function(resolve, reject) {
+                        var xhr = new XMLHttpRequest();
+                        xhr.open(opts.method || 'GET', url, true);
+                        var headers = opts.headers || {};
+                        for (var name in headers) xhr.setRequestHeader(name, headers[name]);
+                        xhr.onload = function() {
+                            resolve({
+                                ok: xhr.status >= 200 && xhr.status < 300,
+                                status: xhr.status,
+                                text: function() { return Promise.resolve(xhr.responseText); },
+                                json: function() { return Promise.resolve(JSON.parse(xhr.responseText)); }
+                            });
+                        };
+                        xhr.onerror = function() { reject(new TypeError('Falha de rede')); };
+                        xhr.send(opts.body || null);
+                    });
+                };
+            }
+            // e.key só existe a partir do Chromium 51; o controle manda keyCode.
+            var KEY_NAMES = { 13: 'Enter', 27: 'Escape', 37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown' };
+            document.addEventListener('keydown', function(e) {
+                if (e.key === undefined && KEY_NAMES[e.keyCode]) {
+                    try { Object.defineProperty(e, 'key', { value: KEY_NAMES[e.keyCode] }); } catch (err) {}
+                }
+            }, true);
+
+            // Sem variáveis CSS: troca cada var(--x) pelo valor do tema OLED, põe o prefixo -webkit-
+            // nas animações e simula o gap do flexbox com margens.
+            if (window.CSS && CSS.supports && CSS.supports('color', 'var(--x)')) return;
+            var style = document.querySelector('style');
+            var css = style.textContent;
+            var vars = {};
+            [/:root\s*\{([^}]*)\}/, /body\.theme-oled\s*\{([^}]*)\}/].forEach(function(re) {
+                var block = re.exec(css);
+                if (!block) return;
+                block[1].replace(/(--[\w-]+)\s*:\s*([^;]+);/g, function(m, name, value) { vars[name] = value.trim(); return m; });
+            });
+            css = css.replace(/var\((--[\w-]+)\)/g, function(m, name) { return vars[name] || 'initial'; })
+                .replace(/@keyframes/g, '@-webkit-keyframes')
+                .replace(/([;{\s])animation:/g, '$1-webkit-animation:');
+            var gapRules = [];
+            css.replace(/([^{}]+)\{([^{}]*)\}/g, function(m, selectors, body) {
+                var gap = /(?:^|;|\s)gap\s*:\s*(\d+)px/.exec(body);
+                if (!gap || gap[1] === '0' || selectors.indexOf('@') !== -1) return m;
+                var side = /flex-direction\s*:\s*column/.test(body) ? 'top' : 'left';
+                selectors.split(',').forEach(function(sel) {
+                    gapRules.push(sel.trim() + ' > * + * { margin-' + side + ': ' + gap[1] + 'px; }');
+                });
+                return m;
+            });
+            style.textContent = css + '\n' + gapRules.join('\n');
+        })();
+    </script>
 </head>
 <body>
     <div class="ambient-glow" id="ambientGlow"></div>

@@ -9,6 +9,7 @@ import sys
 import json
 import shutil
 import subprocess
+import time
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP_DIR = os.path.join(REPO_DIR, "app")
@@ -90,7 +91,7 @@ def _fix_ipk_timestamps(ipk_path):
     def retar(gz_bytes):
         src = tarfile.open(fileobj=io.BytesIO(gz_bytes), mode="r:gz")
         out_buf = io.BytesIO()
-        with tarfile.open(fileobj=out_buf, mode="w:gz") as dst:
+        with tarfile.open(fileobj=out_buf, mode="w:gz", format=tarfile.GNU_FORMAT) as dst:
             for member in src.getmembers():
                 member.mtime = now
                 if member.isfile():
@@ -150,23 +151,54 @@ Architecture: all
 Maintainer: Mizael
 Description: A fast, ad-free 60fps home screen for LG webOS TVs.
 """
+    # Mesmo formato do ares-package: tar clássico (GNU, sem cabeçalhos PAX), caminhos "./",
+    # diretórios incluídos e dono root. webOS antigos (ex.: webOS 3.x / TV Lite) recusam o
+    # pacote em "service installing" quando o tar foge disso.
+    now = int(time.time())
+
+    def tar_entry(tar, name, data=None, is_dir=False):
+        ti = tarfile.TarInfo(name=name)
+        ti.mtime = now
+        ti.uid = ti.gid = 0
+        ti.uname = ti.gname = "root"
+        if is_dir:
+            ti.type = tarfile.DIRTYPE
+            ti.mode = 0o755
+            tar.addfile(ti)
+        else:
+            ti.mode = 0o644
+            ti.size = len(data)
+            tar.addfile(ti, io.BytesIO(data))
+
     # 1. control.tar.gz
     control_buf = io.BytesIO()
-    with tarfile.open(fileobj=control_buf, mode="w:gz") as tar:
-        ti = tarfile.TarInfo(name="control")
-        ti.size = len(control_content)
-        tar.addfile(ti, io.BytesIO(control_content.encode("utf-8")))
+    with tarfile.open(fileobj=control_buf, mode="w:gz", format=tarfile.GNU_FORMAT) as tar:
+        tar_entry(tar, "./", is_dir=True)
+        tar_entry(tar, "./control", control_content.encode("utf-8"))
     control_bytes = control_buf.getvalue()
 
     # 2. data.tar.gz
+    with open(os.path.join(APP_DIR, "appinfo.json"), encoding="utf-8") as f:
+        title = json.load(f).get("title", app_id)
+    packageinfo = json.dumps({"app": app_id, "id": app_id, "loc_name": title, "package_format_version": 2,
+                              "vendor": "Mizael", "version": version}, indent=2).encode("utf-8")
     data_buf = io.BytesIO()
-    with tarfile.open(fileobj=data_buf, mode="w:gz") as tar:
-        for root, _, files in os.walk(APP_DIR):
-            for file in files:
-                full_p = os.path.join(root, file)
-                rel_p = os.path.relpath(full_p, APP_DIR)
-                dest_p = f"/usr/palm/applications/{app_id}/{rel_p.replace(os.sep, '/')}"
-                tar.add(full_p, arcname=dest_p)
+    with tarfile.open(fileobj=data_buf, mode="w:gz", format=tarfile.GNU_FORMAT) as tar:
+        app_base = f"./usr/palm/applications/{app_id}"
+        pkg_base = f"./usr/palm/packages/{app_id}"
+        for d in ["./", "./usr/", "./usr/palm/", "./usr/palm/applications/", app_base + "/",
+                  "./usr/palm/packages/", pkg_base + "/"]:
+            tar_entry(tar, d, is_dir=True)
+        tar_entry(tar, pkg_base + "/packageinfo.json", packageinfo)
+        for root, dirs, files in os.walk(APP_DIR):
+            dirs.sort()
+            rel_root = os.path.relpath(root, APP_DIR).replace(os.sep, "/")
+            if rel_root != ".":
+                tar_entry(tar, f"{app_base}/{rel_root}/", is_dir=True)
+            for file in sorted(files):
+                rel_p = os.path.relpath(os.path.join(root, file), APP_DIR).replace(os.sep, "/")
+                with open(os.path.join(root, file), "rb") as f:
+                    tar_entry(tar, f"{app_base}/{rel_p}", f.read())
     data_bytes = data_buf.getvalue()
 
     # 3. debian-binary
