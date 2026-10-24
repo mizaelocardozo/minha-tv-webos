@@ -1137,7 +1137,8 @@
 
             // Sem variáveis CSS: troca cada var(--x) pelo valor do tema OLED, põe o prefixo -webkit-
             // nas animações e simula o gap do flexbox com margens.
-            if (window.CSS && CSS.supports && CSS.supports('color', 'var(--x)')) return;
+            window.MINHATV_LEGACY = !(window.CSS && CSS.supports && CSS.supports('color', 'var(--x)'));
+            if (!window.MINHATV_LEGACY) return;
             var style = document.querySelector('style');
             var css = style.textContent;
             var vars = {};
@@ -1417,6 +1418,11 @@
             'com.disney.disneyplus-prod': 'disneyplus',
             'spotify-beehive': 'spotify'
         };
+        // TVs antigas não desenham alguns SVGs: usam a versão PNG (assets/brands/png/).
+        function brandLogo(name) {
+            return window.MINHATV_LEGACY ? 'assets/brands/png/' + name + '.png' : 'assets/brands/' + name + '.svg';
+        }
+
         function addTileImage(container, url, branded) {
             var img = document.createElement('img');
             img.alt = '';
@@ -2043,9 +2049,15 @@
             box.hidden = false;
             box.dataset.color = '#c47a2c';
             box.setAttribute('aria-label', SPECIAL.title + ': OK abre no YouTube');
+            // A capa do vídeo fica por trás. TVs antigas desenham o vídeo numa camada separada que
+            // não aparece dentro do quadro (só o som): nelas o player fica invisível e a capa aparece.
+            box.style.backgroundImage = "url('https://i.ytimg.com/vi/" + SPECIAL.id + "/maxresdefault.jpg')";
+            box.style.backgroundSize = 'cover';
+            box.style.backgroundPosition = 'center';
             var iframe = document.createElement('iframe');
             iframe.setAttribute('allow', 'autoplay; encrypted-media');
             iframe.src = SPECIAL_PLAYER_URL + '?v=' + SPECIAL.id;
+            if (window.MINHATV_LEGACY) iframe.style.opacity = '0';
             box.appendChild(iframe);
             var label = document.createElement('div');
             label.className = 'special-video-label';
@@ -2395,7 +2407,7 @@
                         fallback.className = 'app-art-fallback';
                         fallback.textContent = device.title;
                         iconDiv.appendChild(fallback);
-                        addTileImage(iconDiv, 'assets/brands/' + device.logo + '.svg', true);
+                        addTileImage(iconDiv, brandLogo(device.logo), true);
                     } else {
                         iconDiv.innerHTML = deviceArtwork(device.shape);
                     }
@@ -2406,7 +2418,7 @@
                     iconDiv.appendChild(fallback);
                     var logo = APP_LOGOS[app.id];
                     if (logo || app.iconUrl) {
-                        addTileImage(iconDiv, logo ? 'assets/brands/' + logo + '.svg' : app.iconUrl, !!logo);
+                        addTileImage(iconDiv, logo ? brandLogo(logo) : app.iconUrl, !!logo);
                         if (app.photo) iconDiv.lastChild.classList.add('tile-photo');
                     }
                 }
