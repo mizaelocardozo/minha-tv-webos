@@ -28,13 +28,17 @@
                 events: {
                     onReady: function(e) {
                         e.target.playVideo();
-                        // Se a TV não deixar tocar com som sozinho, recomeça mudo.
+                        // TVs lentas demoram a começar: tenta de novo aos 4 s e só recomeça mudo
+                        // aos 10 s, se a TV não deixar tocar com som sozinho.
+                        setTimeout(function() {
+                            if (player.getPlayerState() !== YT.PlayerState.PLAYING) player.playVideo();
+                        }, 4000);
                         setTimeout(function() {
                             if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
                                 player.mute();
                                 player.playVideo();
                             }
-                        }, 4000);
+                        }, 10000);
                     }
                 }
             });
