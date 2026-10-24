@@ -35,7 +35,7 @@ Baseado no projeto [FreeMyTvWebOS](https://github.com/danielthejoker18/FreeMyTvW
 ### 2. Instalar
 
 ```bash
-git clone https://github.com/SEU_USUARIO/minha-tv-webos.git
+git clone https://github.com/mizaelocardozo/minha-tv-webos.git
 cd minha-tv-webos
 python scripts/install.py
 ```
