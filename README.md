@@ -8,9 +8,9 @@ Baseado no projeto [FreeMyTvWebOS](https://github.com/danielthejoker18/FreeMyTvW
 ## O que muda em relação ao original
 
 - Interface 100% em português (menus, avisos, clima e data)
-- **Destaques** no topo: carrossel animado com 5 lançamentos bem avaliados, sorteados entre Netflix, Prime Video, Disney+, Globoplay e HBO Max (renova a cada 3 dias)
+- **Destaques** no topo: carrossel animado com 4 filmes e 3 séries lançados recentemente e bem avaliados, sorteados entre Netflix, Prime Video, Disney+, Globoplay e HBO Max, mais um **DESTAQUE** extra de série policial (de preferência do Prime Video); renova a cada 3 dias. Títulos da Netflix abrem direto na página do título
+- Bloco **Tuti** na prateleira: OK abre a foto em tela cheia
 - **Clima** de Cidade Ocidental-GO (padrão) com previsão das próximas horas, abaixo dos apps
-- **Memória da TV** no mesmo quadro do clima: barra animada com o uso atual e as faixas ideais (ideal até 75%, moderado até 90%, alto acima), atualizada a cada 5 s
 - **Principais notícias**: os 3 vídeos mais vistos do dia da CNN Brasil e do g1; OK abre o vídeo no YouTube
 - Tema **Preto OLED** como padrão
 - Prateleira padrão, nesta ordem: YouTube, Prime Video, Disney+, Globoplay, HBO Max e Netflix

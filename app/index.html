@@ -189,7 +189,7 @@
         /* Destaques: carrossel animado no topo */
         .hero-carousel {
             position: relative;
-            height: 330px;
+            height: 400px;
             border-radius: 28px;
             overflow: hidden;
             border: 1.5px solid var(--glass-border);
@@ -256,6 +256,19 @@
             letter-spacing: 1px;
             color: #fff;
             margin-bottom: 14px;
+        }
+
+        .carousel-featured {
+            display: inline-block;
+            margin: 0 0 14px 10px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            color: #1a1200;
+            background: linear-gradient(90deg, #ffd60a, #ff9f0a);
+            box-shadow: 0 0 18px rgba(255, 214, 10, 0.45);
         }
 
         .carousel-meta {
@@ -486,7 +499,7 @@
         .info-row {
             display: flex;
             gap: 20px;
-            height: 286px;
+            height: 196px;
         }
 
         .info-panel {
@@ -532,10 +545,10 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            margin-bottom: 8px;
+            margin-bottom: 14px;
         }
 
-        .weather-now-icon { font-size: 36px; }
+        .weather-now-icon { font-size: 40px; }
         .weather-now-text { font-size: 24px; font-weight: 600; }
 
         .weather-hours {
@@ -551,95 +564,6 @@
 
         .weather-hour div:nth-child(2) { font-size: 20px; margin: 2px 0; }
         .weather-hour div:nth-child(3) { color: var(--text-primary); font-weight: 600; font-size: 15px; }
-
-        /* Memória da TV: faixa com as zonas ideais e um marcador que desliza até o valor atual. */
-        .perf-block {
-            margin-top: 12px;
-            padding-top: 10px;
-            border-top: 1px solid var(--glass-border);
-        }
-
-        .perf-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 8px;
-        }
-
-        .perf-title {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .perf-pulse {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #30d158;
-            animation: perfPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes perfPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.35; transform: scale(0.7); }
-        }
-
-        .perf-value {
-            font-size: 22px;
-            font-weight: 700;
-            transition: color 0.6s ease;
-        }
-
-        .perf-bar {
-            position: relative;
-            display: flex;
-            height: 12px;
-            border-radius: 6px;
-            overflow: visible;
-        }
-
-        .perf-zone { height: 100%; opacity: 0.85; }
-        .perf-zone-ok { width: 75%; background: #30d158; border-radius: 6px 0 0 6px; }
-        .perf-zone-warn { width: 15%; background: #ffd60a; }
-        .perf-zone-high { width: 10%; background: #ff453a; border-radius: 0 6px 6px 0; }
-
-        .perf-marker {
-            position: absolute;
-            top: -5px;
-            left: 0;
-            width: 6px;
-            height: 22px;
-            margin-left: -3px;
-            border-radius: 3px;
-            background: #fff;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-            transition: left 1.2s cubic-bezier(0.3, 1.2, 0.5, 1);
-        }
-
-        /* Labels sit at the start of their zone (0%, 75%) and the end of the bar. */
-        .perf-scale {
-            position: relative;
-            height: 14px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 6px;
-        }
-        .perf-scale span { position: absolute; top: 0; white-space: nowrap; }
-        .perf-scale span:nth-child(1) { left: 0; }
-        .perf-scale span:nth-child(2) { left: 75%; }
-        .perf-scale span:nth-child(3) { right: 0; }
-
-        .perf-detail {
-            font-size: 13px;
-            margin-top: 6px;
-            color: var(--text-primary);
-        }
 
         .news-panel { flex: 1; }
 
@@ -1138,20 +1062,6 @@
                     </div>
                 </div>
                 <div class="weather-hours" id="weatherHours"></div>
-                <div class="perf-block">
-                    <div class="perf-head">
-                        <span class="perf-title"><span class="perf-pulse" id="perfPulse"></span>Memória da TV</span>
-                        <span class="perf-value" id="perfValue">--%</span>
-                    </div>
-                    <div class="perf-bar">
-                        <div class="perf-zone perf-zone-ok"></div>
-                        <div class="perf-zone perf-zone-warn"></div>
-                        <div class="perf-zone perf-zone-high"></div>
-                        <div class="perf-marker" id="perfMarker"></div>
-                    </div>
-                    <div class="perf-scale"><span>Ideal até 75%</span><span>Moderado</span><span>Alto 90%+</span></div>
-                    <div class="perf-detail" id="perfDetail">Lendo memória…</div>
-                </div>
             </div>
             <div class="info-panel news-panel">
                 <div class="info-header">Principais notícias <span class="info-hint" id="newsHint"></span></div>
@@ -1696,10 +1606,11 @@
         }
 
         // --- Destaques (TMDB watch providers, região BR) ---
-        // 7 lançamentos bem avaliados (sempre 4 filmes e 3 séries), sorteados entre os serviços da prateleira.
+        // 7 lançamentos bem avaliados (sempre 4 filmes e 3 séries), sorteados entre os serviços da prateleira,
+        // mais um DESTAQUE extra: uma série policial, de preferência do Prime Video.
         // O sorteio fica salvo e só é refeito a cada 3 dias (ou se os serviços mudarem).
         var CAROUSEL_QUOTA = { movie: 4, tv: 3 };
-        var CAROUSEL_VERSION = 3; // muda quando o formato do sorteio salvo muda
+        var CAROUSEL_VERSION = 4; // muda quando o formato do sorteio salvo muda
         var CAROUSEL_TTL_MS = 3 * 24 * 60 * 60 * 1000;
         var CAROUSEL_SLIDE_MS = 8000;
         var CAROUSEL_STORE = 'fmtv_carousel';
@@ -1820,8 +1731,48 @@
                 .catch(function() { return item; });
         }
 
+        // Série policial (gênero 80, sem animação) bem avaliada dos últimos 3 anos; Prime Video primeiro.
+        var FEATURED_CURATED = { title: 'Bosch: O Legado', info: 'Série • Policial', desc: 'Aposentado da polícia, Harry Bosch vira investigador particular e enfrenta casos e inimigos de Los Angeles.', backdrop: '', service: 'prime', kind: 'tv', featured: true };
+
+        function featuredServices(services) {
+            var prime = arrFind(services, function(s) { return s.key === 'prime'; });
+            return prime ? [prime].concat(services.filter(function(s) { return s !== prime; })) : services;
+        }
+
+        function fetchFeatured(services, taken) {
+            var since = (new Date().getFullYear() - 3) + '-01-01';
+            var order = featuredServices(services);
+            function tryService(i) {
+                if (i >= order.length) return Promise.resolve(null);
+                var service = order[i];
+                return tmdbGet('/discover/tv?language=pt-BR&watch_region=BR&with_watch_monetization_types=flatrate' +
+                        '&with_watch_providers=' + encodeURIComponent(service.provider) + '&with_genres=80&without_genres=16' +
+                        '&sort_by=popularity.desc&vote_count.gte=50&vote_average.gte=7&first_air_date.gte=' + since)
+                    .then(function(data) {
+                        var options = (data.results || []).filter(function(item) {
+                            return item.backdrop_path && item.overview && item.name && !taken[item.name];
+                        }).slice(0, 8);
+                        if (!options.length) return tryService(i + 1);
+                        var item = options[Math.floor(Math.random() * options.length)];
+                        return {
+                            title: item.name,
+                            info: ['Série', 'Policial', (item.first_air_date || '').slice(0, 4), item.vote_average.toFixed(1).replace('.', ',') + '★'].filter(Boolean).join(' • '),
+                            desc: item.overview,
+                            backdrop: 'https://image.tmdb.org/t/p/w1280' + item.backdrop_path,
+                            score: item.vote_average,
+                            kind: 'tv',
+                            tmdbId: item.id,
+                            service: service.key,
+                            featured: true
+                        };
+                    })
+                    .catch(function() { return tryService(i + 1); });
+            }
+            return tryService(0);
+        }
+
         function curatedCarousel(services) {
-            return pickCarousel(services.map(function(service) {
+            var picks = pickCarousel(services.map(function(service) {
                 var curated = CURATED_CATALOG[service.key];
                 return curated.movies.map(function(row) { return [row, 'movie']; })
                     .concat(curated.shows.map(function(row) { return [row, 'tv']; }))
@@ -1830,6 +1781,8 @@
                         return { title: entry[0][0], info: label + ' • ' + entry[0][1], desc: entry[0][2], backdrop: '', service: service.key, kind: entry[1] };
                     });
             }));
+            var hasPrime = arrFind(services, function(s) { return s.key === 'prime'; });
+            return hasPrime ? [FEATURED_CURATED].concat(picks) : picks;
         }
 
         function readCarouselStore() {
@@ -1853,7 +1806,11 @@
             Promise.all(services.map(fetchServicePool)).then(function(pools) {
                 var items = pickCarousel(pools);
                 if (!items.length) { renderCarousel(curatedCarousel(services), 0); return; }
-                return Promise.all(items.map(addServiceId));
+                var taken = {};
+                items.forEach(function(item) { taken[item.title] = true; });
+                return fetchFeatured(services, taken).then(function(featured) {
+                    return Promise.all((featured ? [featured] : []).concat(items).map(addServiceId));
+                });
             }).then(function(items) {
                 if (!items) return;
                 var record = { at: Date.now(), signature: signature, items: items };
@@ -1878,89 +1835,6 @@
                 });
                 container.appendChild(chip);
             });
-        }
-
-        // --- Memória da TV ---
-        // Tenta o serviço de memória do webOS (o app pode ter acesso mesmo quando o terminal não tem)
-        // e, se não der, /proc/meminfo. O motivo da falha aparece no quadro para diagnóstico.
-        var PERF_LEVELS = [
-            { max: 75, label: 'Ideal', color: '#30d158', tip: 'tudo fluindo bem' },
-            { max: 90, label: 'Moderado', color: '#ffd60a', tip: 'normal com apps abertos' },
-            { max: 101, label: 'Alto', color: '#ff453a', tip: 'feche apps que não está usando' }
-        ];
-
-        function formatMemory(kb) {
-            return kb >= 1048576 ? (kb / 1048576).toFixed(1).replace('.', ',') + ' GB' : Math.round(kb / 1024) + ' MB';
-        }
-
-        function readMeminfo(onDone) {
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', 'file:///proc/meminfo', true);
-                xhr.onload = function() { onDone(xhr.responseText || ''); };
-                xhr.onerror = function() { onDone(''); };
-                xhr.send();
-            } catch (e) { onDone(''); }
-        }
-
-        // A resposta do serviço não é documentada para TVs: procura campos de total e livre em
-        // qualquer nível (valores em MB ou kB, normalizados para kB pelo tamanho).
-        function findMemoryFields(obj) {
-            var found = {};
-            (function walk(node) {
-                if (!node || typeof node !== 'object') return;
-                Object.keys(node).forEach(function(key) {
-                    var v = node[key];
-                    if (typeof v === 'number') {
-                        if (/total/i.test(key) && !found.total) found.total = v;
-                        else if (/avail|free/i.test(key) && !found.avail) found.avail = v;
-                    } else walk(v);
-                });
-            })(obj);
-            if (!found.total || !found.avail) return null;
-            // Unidade pelo tamanho do total: < 64 mil = MB, > 64 milhões = bytes, senão kB.
-            var toKb = found.total < 65536 ? 1024 : found.total > 67108864 ? 1 / 1024 : 1;
-            return { totalKb: found.total * toKb, availKb: found.avail * toKb };
-        }
-
-        function readMemoryService(onDone) {
-            if (!window.webOS || !window.webOS.service || typeof window.webOS.service.request !== 'function') { onDone(null, 'sem webOS'); return; }
-            try {
-                webOS.service.request('luna://com.webos.memorymanager', {
-                    method: 'getCurrentMemState',
-                    parameters: {},
-                    onSuccess: function(res) {
-                        var mem = findMemoryFields(res);
-                        onDone(mem, mem ? '' : 'resposta: ' + JSON.stringify(res).slice(0, 80));
-                    },
-                    onFailure: function(err) { onDone(null, (err && err.errorText) || 'serviço negado'); }
-                });
-            } catch (e) { onDone(null, 'erro no serviço'); }
-        }
-
-        function updatePerformance() {
-            readMemoryService(function(serviceMem, serviceError) {
-                if (serviceMem) { showMemory(serviceMem.totalKb, serviceMem.availKb); return; }
-                readMeminfo(function(text) {
-                    var total = /MemTotal:\s+(\d+)/.exec(text);
-                    var avail = /MemAvailable:\s+(\d+)/.exec(text);
-                    if (total && avail) { showMemory(parseInt(total[1], 10), parseInt(avail[1], 10)); return; }
-                    document.getElementById('perfValue').textContent = '--%';
-                    document.getElementById('perfPulse').style.background = 'var(--text-secondary)';
-                    document.getElementById('perfDetail').textContent = 'Leitura indisponível nesta TV (' + serviceError + ').';
-                });
-            });
-        }
-
-        function showMemory(totalKb, availKb) {
-            var used = Math.max(0, Math.min(100, Math.round((totalKb - availKb) / totalKb * 100)));
-            var level = arrFind(PERF_LEVELS, function(l) { return used < l.max; });
-            var value = document.getElementById('perfValue');
-            value.textContent = used + '%';
-            value.style.color = level.color;
-            document.getElementById('perfPulse').style.background = level.color;
-            document.getElementById('perfMarker').style.left = used + '%';
-            document.getElementById('perfDetail').textContent = level.label + ' • ' + formatMemory(availKb) + ' livres de ' + formatMemory(totalKb) + ' • ' + level.tip;
         }
 
         // --- Principais notícias (vídeos recentes da CNN Brasil e do g1 no YouTube) ---
@@ -2307,6 +2181,12 @@
                 badge.style.background = app.color;
                 badge.textContent = app.title;
                 content.appendChild(badge);
+                if (item.featured) {
+                    var ribbon = document.createElement('div');
+                    ribbon.className = 'carousel-featured';
+                    ribbon.textContent = '★ DESTAQUE • SÉRIE POLICIAL';
+                    content.appendChild(ribbon);
+                }
                 [['carousel-meta', item.info], ['carousel-title', item.title], ['carousel-desc', item.desc],
                  ['carousel-cta', 'OK para assistir no ' + app.title + '   ‹ ›  outros destaques']].forEach(function(part) {
                     var el = document.createElement('div');
@@ -2822,12 +2702,10 @@
         fetchWeather();
         loadCarousel();
         fetchNews();
-        updatePerformance();
         discoverTVApps();
         // Refresh weather and news every 30 mins; the carousel checks hourly whether its 3 days are up
         setInterval(fetchWeather, 30 * 60 * 1000);
         setInterval(fetchNews, 30 * 60 * 1000);
-        setInterval(updatePerformance, 5000);
         setInterval(loadCarousel, 60 * 60 * 1000);
     </script>
 </body>
