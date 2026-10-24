@@ -81,6 +81,28 @@ python scripts/build.py      # gera dist/com.mizael.minhatv_<versão>_all.ipk
 python scripts/install.py    # instala na TV
 ```
 
+## Outras TVs (perfis)
+
+O mesmo código atende várias TVs. O que muda de uma para outra fica num **perfil**:
+
+- `app/profile.js` — esta TV (Cidade Ocidental, bloco do Tuti)
+- `profiles/<nome>/profile.js` — outra TV; `profiles/<nome>/appinfo.override.json` muda o nome na lista de apps
+
+Opções do perfil: `name` (nome no topo), `city`, `family` (bloco de foto ou `null`), `featured`
+(`crimeSeries` ou `familyMovie`), `news` (`false` tira as notícias), `messages` (mensagens sorteadas),
+`photoCarousel` (até 5 fotos com crédito) e `specialVideo` (vídeo do YouTube fixo ao lado do carrossel).
+
+Exemplo: `profiles/alexania` é a TV **Rancho Toco do Caju**, com vídeo, fotos do Lago Corumbá IV e mensagens.
+
+```bash
+python scripts/build.py --profile alexania               # dist/com.mizael.minhatv_<versão>_alexania_all.ipk
+python scripts/install.py <IP> <senha> --profile alexania
+```
+
+O vídeo especial toca por `docs/player.html` no GitHub Pages
+(https://mizaelocardozo.github.io/minha-tv-webos/player.html), porque o YouTube recusa vídeos embutidos
+direto no app instalado (erro 153). Cada TV guarda a sua chave de acesso em `~/.ssh/webos_tv_<IP>_rsa_decrypted`.
+
 ## Limitações
 
 - Sem root, o botão **Home** físico continua abrindo a tela da LG; a Minha TV abre pelo atalho do número **1**.

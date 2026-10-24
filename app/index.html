@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha TV</title>
     <script src="webOSTV.js"></script>
+    <script src="profile.js"></script>
     <style>
         :root {
             --bg-gradient: radial-gradient(circle at 50% -10%, #171d33 0%, #0a0e1a 55%, #04060a 100%);
@@ -198,6 +199,43 @@
             cursor: pointer;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Perfil com vídeo especial: vídeo fixo à esquerda, carrossel à direita. */
+        .hero-row {
+            display: flex;
+            gap: 20px;
+        }
+        .hero-row .hero-carousel { flex: 1; min-width: 0; }
+        .special-video {
+            flex: 0 0 711px; /* 16:9 na altura do carrossel */
+            height: 400px;
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            background: #000;
+            border: 1.5px solid var(--glass-border);
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .special-video[hidden] { display: none; }
+        .special-video.focused {
+            border-color: var(--glass-focus-border);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.18);
+        }
+        /* O controle fala com a Minha TV, não com o player embutido. */
+        .special-video iframe { width: 100%; height: 100%; border: 0; pointer-events: none; }
+        .special-video-label {
+            position: absolute;
+            left: 18px;
+            top: 16px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.6);
         }
 
         .hero-carousel.focused {
@@ -440,7 +478,7 @@
         .app-icon img.tile-brand-logo { width: 76%; height: 76%; }
         .app-icon img.tile-photo { object-fit: cover; object-position: center 30%; }
 
-        /* Foto em tela cheia (bloco Tuti da prateleira). */
+        /* Foto em tela cheia (bloco de foto da prateleira). */
         .photo-viewer {
             position: fixed;
             top: 0; right: 0; bottom: 0; left: 0;
@@ -565,7 +603,59 @@
         .weather-hour div:nth-child(2) { font-size: 20px; margin: 2px 0; }
         .weather-hour div:nth-child(3) { color: var(--text-primary); font-weight: 600; font-size: 15px; }
 
+        /* Carrossel de fotos do perfil (ex.: Lago Corumbá IV), entre o clima e as notícias. */
+        .photo-panel {
+            flex: 0 0 24%;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+        }
+        .photo-panel[hidden] { display: none; }
+        .photo-panel img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transform: scale(1.06);
+            transition: opacity 1.2s ease, transform 7s ease-out;
+        }
+        .photo-panel img.active { opacity: 1; transform: scale(1); }
+        .photo-panel-title, .photo-panel-credit {
+            position: absolute;
+            left: 14px;
+            z-index: 1;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+        }
+        .photo-panel-title { top: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+        .photo-panel-credit { bottom: 10px; font-size: 11px; color: rgba(255, 255, 255, 0.8); }
+        /* Com o painel de fotos, as notícias ficam mais estreitas. */
+        .info-row.with-photos .weather-panel { flex-basis: 27%; }
+        .info-row.with-photos .news-thumb { flex-basis: 104px; height: 78px; }
+        .info-row.with-photos .news-title { font-size: 14px; }
+        .info-row.with-photos .news-card { gap: 10px; }
+
         .news-panel { flex: 1; }
+        .news-panel[hidden] { display: none; }
+        /* Perfil sem notícias: as fotos ocupam o espaço ao lado do clima (ou dividem com as mensagens). */
+        .info-row.no-news .photo-panel { flex: 1; }
+        .info-row.with-messages .photo-panel { flex: 0 0 30%; }
+
+        /* Mensagens que trocam sozinhas, no lugar das notícias. */
+        .message-panel { flex: 1; display: flex; flex-direction: column; }
+        .message-panel[hidden] { display: none; }
+        .message-text {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -0.5px;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .message-text.fading { opacity: 0; transform: translateY(8px); }
 
         .news-grid {
             display: flex;
@@ -1015,7 +1105,7 @@
                 <div class="brand-logo">
                     <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
                 </div>
-                <div class="brand-title">Minha TV</div>
+                <div class="brand-title" id="brandTitle">Minha TV</div>
                 <div class="tag-pill" id="themeBadge">OLED • 60 FPS</div>
             </div>
             <div class="header-info">
@@ -1029,11 +1119,14 @@
             </div>
         </header>
 
-        <!-- Destaques: carrossel com até 5 títulos dos seus serviços -->
-        <div class="hero-carousel nav-item" id="heroCarousel" role="button" aria-roledescription="carrossel" aria-label="Destaques">
-            <div class="carousel-status" id="carouselStatus">Carregando destaques…</div>
-            <div class="carousel-source" id="carouselSource"></div>
-            <div class="carousel-dots" id="carouselDots"></div>
+        <!-- Destaques: vídeo especial do perfil (opcional) e carrossel com títulos dos seus serviços -->
+        <div class="hero-row">
+            <div class="special-video nav-item" id="specialVideo" role="button" hidden></div>
+            <div class="hero-carousel nav-item" id="heroCarousel" role="button" aria-roledescription="carrossel" aria-label="Destaques">
+                <div class="carousel-status" id="carouselStatus">Carregando destaques…</div>
+                <div class="carousel-source" id="carouselSource"></div>
+                <div class="carousel-dots" id="carouselDots"></div>
+            </div>
         </div>
 
         <!-- Glass Shelf: Apps -->
@@ -1063,7 +1156,15 @@
                 </div>
                 <div class="weather-hours" id="weatherHours"></div>
             </div>
-            <div class="info-panel news-panel">
+            <div class="info-panel photo-panel" id="photoPanel" hidden>
+                <div class="photo-panel-title" id="photoPanelTitle"></div>
+                <div class="photo-panel-credit" id="photoPanelCredit"></div>
+            </div>
+            <div class="info-panel message-panel" id="messagePanel" hidden>
+                <div class="info-header" id="messageTitle"></div>
+                <div class="message-text" id="messageText"></div>
+            </div>
+            <div class="info-panel news-panel" id="newsPanel">
                 <div class="info-header">Principais notícias <span class="info-hint" id="newsHint"></span></div>
                 <div class="news-grid" id="newsGrid"></div>
             </div>
@@ -1198,10 +1299,17 @@
             { id: 'com.crunchyroll.webapp', title: 'Crunchyroll', tag: 'Anime', desc: 'O maior catálogo de animes.', color: '#f47521', badge: 'CR', bg: 'linear-gradient(135deg, #f47521, #c4570d)' },
             { id: 'com.webos.app.browser', title: 'Navegador', tag: 'Internet', desc: 'Navegador de internet da TV.', color: '#5856d6', badge: 'WEB', bg: 'linear-gradient(135deg, #5856d6, #3634a3)' },
             { id: 'com.webos.app.mediadiscovery', title: 'Mídia USB', tag: 'Mídia local', desc: 'Fotos, vídeos e músicas de pendrive ou servidor DLNA.', color: '#7e56b1', badge: 'USB', bg: 'linear-gradient(135deg, #7e56b1, #4f3278)' },
-            // Bloco de foto (não é um app): OK mostra a foto em tela cheia.
-            { id: 'minhatv.tuti', title: 'Tuti', tag: 'Família', desc: 'Foto do Tuti.', color: '#7fb3d5', badge: 'Tuti', bg: '#dfe9f2', iconUrl: 'assets/tuti-tile.jpg', photo: 'assets/tuti.jpg' },
             { id: 'org.webosbrew.hbchannel', title: 'Homebrew', tag: 'Sistema', desc: 'Loja Homebrew Channel e ajustes do sistema.', color: '#cf0652', badge: 'HB', bg: 'linear-gradient(135deg, #cf0652, #8b0034)' }
         ];
+
+        // Ajustes desta TV (app/profile.js, ou o perfil escolhido no build).
+        var PROFILE = window.MINHATV_PROFILE || {};
+        var FAMILY = PROFILE.family && PROFILE.family.id ? PROFILE.family : null;
+        // Bloco de foto (não é um app): OK mostra a foto em tela cheia.
+        if (FAMILY) {
+            DEFAULT_CATALOG.splice(DEFAULT_CATALOG.length - 1, 0, { id: FAMILY.id, title: FAMILY.name, tag: 'Família', desc: 'Foto de ' + FAMILY.name + '.',
+                color: '#7fb3d5', badge: FAMILY.name, bg: '#dfe9f2', iconUrl: FAMILY.tile, photo: FAMILY.photo });
+        }
 
         // Device artwork is bundled inline so HDMI tiles also work offline.
         var DEVICE_PRESETS = [
@@ -1267,9 +1375,9 @@
             'com.disney.disneyplus-prod',
             'globoplaywebos',
             'com.hbo.hbomax',
-            'netflix',
-            'minhatv.tuti'
+            'netflix'
         ];
+        if (FAMILY) DEFAULT_FAVORITES.push(FAMILY.id);
 
         // Serviços do catálogo: cada um aponta para o app da prateleira (o objeto,
         // não o ID, porque discoverTVApps pode trocar o ID pelo real da TV) e para
@@ -1365,7 +1473,7 @@
             }
         } catch (e) {}
 
-        var DEFAULT_CITY = 'Cidade Ocidental';
+        var DEFAULT_CITY = PROFILE.city || '';
 
         // --- Persistent State ---
         var state = {
@@ -1384,14 +1492,16 @@
             isNight: true
         };
 
-        // Quem já tinha uma prateleira salva ganha o bloco do Tuti uma vez, logo depois da Netflix.
+        // Quem já tinha uma prateleira salva ganha o bloco de foto uma vez, logo depois da Netflix.
+        // (A primeira versão, só com o Tuti, marcava isso em fmtv_tuti_added.)
         try {
-            if (state.favorites.indexOf('minhatv.tuti') === -1 && !localStorage.getItem('fmtv_tuti_added') && state.favorites.length < 8) {
+            var familyFlag = FAMILY && (FAMILY.id === 'minhatv.tuti' ? 'fmtv_tuti_added' : 'fmtv_family_added_' + FAMILY.id);
+            if (FAMILY && state.favorites.indexOf(FAMILY.id) === -1 && !localStorage.getItem(familyFlag) && state.favorites.length < 8) {
                 var netflixAt = state.favorites.indexOf('netflix');
-                state.favorites.splice(netflixAt === -1 ? state.favorites.length : netflixAt + 1, 0, 'minhatv.tuti');
+                state.favorites.splice(netflixAt === -1 ? state.favorites.length : netflixAt + 1, 0, FAMILY.id);
                 localStorage.setItem('fmtv_favorites', JSON.stringify(state.favorites));
             }
-            localStorage.setItem('fmtv_tuti_added', '1');
+            if (familyFlag) localStorage.setItem(familyFlag, '1');
         } catch (e) {}
 
         // --- Clock & Date ---
@@ -1607,7 +1717,7 @@
 
         // --- Destaques (TMDB watch providers, região BR) ---
         // 7 lançamentos bem avaliados (sempre 4 filmes e 3 séries), sorteados entre os serviços da prateleira,
-        // mais um DESTAQUE extra: uma série policial, de preferência do Prime Video.
+        // mais um DESTAQUE extra (série policial ou filme em família, conforme o perfil), de preferência do Prime Video.
         // O sorteio fica salvo e só é refeito a cada 3 dias (ou se os serviços mudarem).
         var CAROUSEL_QUOTA = { movie: 4, tv: 3 };
         var CAROUSEL_VERSION = 4; // muda quando o formato do sorteio salvo muda
@@ -1731,8 +1841,19 @@
                 .catch(function() { return item; });
         }
 
-        // Série policial (gênero 80, sem animação) bem avaliada dos últimos 3 anos; Prime Video primeiro.
-        var FEATURED_CURATED = { title: 'Bosch: O Legado', info: 'Série • Policial', desc: 'Aposentado da polícia, Harry Bosch vira investigador particular e enfrenta casos e inimigos de Los Angeles.', backdrop: '', service: 'prime', kind: 'tv', featured: true };
+        // DESTAQUE extra do carrossel, escolhido pelo perfil (PROFILE.featured): bem avaliado
+        // (7+), dos últimos 3 anos, com o Prime Video tentado primeiro.
+        var FEATURE_TYPES = {
+            crimeSeries: {
+                media: 'tv', genres: '80', withoutGenres: '16', label: 'SÉRIE POLICIAL', info: ['Série', 'Policial'],
+                curated: { title: 'Bosch: O Legado', info: 'Série • Policial', desc: 'Aposentado da polícia, Harry Bosch vira investigador particular e enfrenta casos e inimigos de Los Angeles.', backdrop: '', service: 'prime', kind: 'tv', featured: true }
+            },
+            familyMovie: {
+                media: 'movie', genres: '10751', withoutGenres: '', label: 'FILME EM FAMÍLIA', info: ['Filme', 'Família'],
+                curated: { title: 'Divertida Mente 2', info: 'Filme • Família', desc: 'Riley entra na adolescência e novas emoções chegam à sala de controle.', backdrop: '', service: 'disney', kind: 'movie', featured: true }
+            }
+        };
+        var FEATURE = FEATURE_TYPES[PROFILE.featured] || FEATURE_TYPES.crimeSeries;
 
         function featuredServices(services) {
             var prime = arrFind(services, function(s) { return s.key === 'prime'; });
@@ -1745,22 +1866,26 @@
             function tryService(i) {
                 if (i >= order.length) return Promise.resolve(null);
                 var service = order[i];
-                return tmdbGet('/discover/tv?language=pt-BR&watch_region=BR&with_watch_monetization_types=flatrate' +
-                        '&with_watch_providers=' + encodeURIComponent(service.provider) + '&with_genres=80&without_genres=16' +
-                        '&sort_by=popularity.desc&vote_count.gte=50&vote_average.gte=7&first_air_date.gte=' + since)
+                var dateField = FEATURE.media === 'tv' ? 'first_air_date' : 'primary_release_date';
+                return tmdbGet('/discover/' + FEATURE.media + '?language=pt-BR&watch_region=BR&with_watch_monetization_types=flatrate' +
+                        '&with_watch_providers=' + encodeURIComponent(service.provider) + '&with_genres=' + FEATURE.genres +
+                        (FEATURE.withoutGenres ? '&without_genres=' + FEATURE.withoutGenres : '') +
+                        '&sort_by=popularity.desc&vote_count.gte=50&vote_average.gte=7&' + dateField + '.gte=' + since)
                     .then(function(data) {
                         var options = (data.results || []).filter(function(item) {
-                            return item.backdrop_path && item.overview && item.name && !taken[item.name];
+                            var title = item.title || item.name;
+                            return item.backdrop_path && item.overview && title && !taken[title];
                         }).slice(0, 8);
                         if (!options.length) return tryService(i + 1);
                         var item = options[Math.floor(Math.random() * options.length)];
+                        var date = item.release_date || item.first_air_date || '';
                         return {
-                            title: item.name,
-                            info: ['Série', 'Policial', (item.first_air_date || '').slice(0, 4), item.vote_average.toFixed(1).replace('.', ',') + '★'].filter(Boolean).join(' • '),
+                            title: item.title || item.name,
+                            info: FEATURE.info.concat([date.slice(0, 4), item.vote_average.toFixed(1).replace('.', ',') + '★']).filter(Boolean).join(' • '),
                             desc: item.overview,
                             backdrop: 'https://image.tmdb.org/t/p/w1280' + item.backdrop_path,
                             score: item.vote_average,
-                            kind: 'tv',
+                            kind: FEATURE.media,
                             tmdbId: item.id,
                             service: service.key,
                             featured: true
@@ -1781,8 +1906,8 @@
                         return { title: entry[0][0], info: label + ' • ' + entry[0][1], desc: entry[0][2], backdrop: '', service: service.key, kind: entry[1] };
                     });
             }));
-            var hasPrime = arrFind(services, function(s) { return s.key === 'prime'; });
-            return hasPrime ? [FEATURED_CURATED].concat(picks) : picks;
+            var curatedService = arrFind(services, function(s) { return s.key === FEATURE.curated.service; });
+            return curatedService ? [FEATURE.curated].concat(picks) : picks;
         }
 
         function readCarouselStore() {
@@ -1791,7 +1916,7 @@
 
         function loadCarousel() {
             var services = catalogServices();
-            var signature = CAROUSEL_VERSION + '|' + services.map(function(s) { return s.key; }).join(',') + '|' + state.tmdbKey.trim();
+            var signature = CAROUSEL_VERSION + '|' + (PROFILE.featured || 'crimeSeries') + '|' + services.map(function(s) { return s.key; }).join(',') + '|' + state.tmdbKey.trim();
             var saved = readCarouselStore();
             var fresh = saved && saved.signature === signature && Date.now() - saved.at < CAROUSEL_TTL_MS &&
                 Array.isArray(saved.items) && saved.items.length;
@@ -1835,6 +1960,90 @@
                 });
                 container.appendChild(chip);
             });
+        }
+
+        // --- Vídeo especial do perfil (ex.: Rancho Toco do Caju na TV de Alexânia) ---
+        // O YouTube recusa vídeos embutidos direto no app (erro 153: página sem endereço web), então o
+        // vídeo toca por docs/player.html no GitHub Pages, que cuida do autoplay, do loop e do som.
+        var SPECIAL_PLAYER_URL = 'https://mizaelocardozo.github.io/minha-tv-webos/player.html';
+        var SPECIAL = PROFILE.specialVideo && /^[A-Za-z0-9_-]{11}$/.test(PROFILE.specialVideo.id) ? PROFILE.specialVideo : null;
+
+        function setupSpecialVideo() {
+            var box = document.getElementById('specialVideo');
+            if (!SPECIAL) return;
+            box.hidden = false;
+            box.dataset.color = '#c47a2c';
+            box.setAttribute('aria-label', SPECIAL.title + ': OK abre no YouTube');
+            var iframe = document.createElement('iframe');
+            iframe.setAttribute('allow', 'autoplay; encrypted-media');
+            iframe.src = SPECIAL_PLAYER_URL + '?v=' + SPECIAL.id;
+            box.appendChild(iframe);
+            var label = document.createElement('div');
+            label.className = 'special-video-label';
+            label.textContent = SPECIAL.title;
+            box.appendChild(label);
+
+            box.addEventListener('mouseenter', function() { setMainFocus(box); });
+            box.addEventListener('click', function() {
+                launchApp(catalogApp('youtube.leanback.v4').id, '', { contentTarget: 'https://www.youtube.com/tv?v=' + SPECIAL.id });
+            });
+        }
+
+        // --- Carrossel de fotos do perfil (até 5, troca a cada 7 s) ---
+        function setupPhotoCarousel() {
+            var conf = PROFILE.photoCarousel;
+            var photos = conf && Array.isArray(conf.photos) ? conf.photos.filter(function(p) { return /^https:\/\//.test(p.url); }).slice(0, 5) : [];
+            if (!photos.length) return;
+            var panel = document.getElementById('photoPanel');
+            panel.hidden = false;
+            panel.parentNode.classList.add('with-photos');
+            document.getElementById('photoPanelTitle').textContent = conf.title || '';
+            var imgs = photos.map(function(p) {
+                var img = document.createElement('img');
+                img.alt = conf.title || '';
+                img.src = p.url;
+                panel.insertBefore(img, panel.firstChild);
+                return img;
+            });
+            var index = -1;
+            function next() {
+                if (index >= 0) imgs[index].classList.remove('active');
+                index = (index + 1) % imgs.length;
+                imgs[index].classList.add('active');
+                document.getElementById('photoPanelCredit').textContent = 'Foto: ' + photos[index].credit + ' • Wikimedia Commons';
+            }
+            next();
+            setInterval(function() { if (!screensaverOn) next(); }, 7000);
+        }
+
+        // --- Mensagens do perfil: uma por vez, em ordem aleatória, trocando a cada 15 s ---
+        function setupMessages() {
+            var conf = PROFILE.messages;
+            var list = conf && Array.isArray(conf.items) ? conf.items.filter(function(m) { return typeof m === 'string' && m; }) : [];
+            if (!list.length) return;
+            document.getElementById('messagePanel').hidden = false;
+            document.querySelector('.info-row').classList.add('with-messages');
+            document.getElementById('messageTitle').textContent = conf.title || '';
+            var textEl = document.getElementById('messageText');
+            var queue = [];
+            var last = null;
+            function next() {
+                if (!queue.length) {
+                    queue = shuffle(list);
+                    if (queue[0] === last && queue.length > 1) queue.push(queue.shift()); // não repete em seguida
+                }
+                last = queue.shift();
+                return last;
+            }
+            textEl.textContent = next();
+            setInterval(function() {
+                if (screensaverOn) return;
+                textEl.classList.add('fading');
+                setTimeout(function() {
+                    textEl.textContent = next();
+                    textEl.classList.remove('fading');
+                }, 800);
+            }, 15000);
         }
 
         // --- Principais notícias (vídeos das últimas 3 h dos portais no YouTube) ---
@@ -2191,7 +2400,7 @@
                 if (item.featured) {
                     var ribbon = document.createElement('div');
                     ribbon.className = 'carousel-featured';
-                    ribbon.textContent = '★ DESTAQUE • SÉRIE POLICIAL';
+                    ribbon.textContent = '★ DESTAQUE • ' + FEATURE.label;
                     content.appendChild(ribbon);
                 }
                 [['carousel-meta', item.info], ['carousel-title', item.title], ['carousel-desc', item.desc],
@@ -2327,7 +2536,7 @@
             var current = mainNavItems[curIndex];
             if (!current) return;
             // Descendo do carrossel vai direto para os apps, sem parar no botão Reordenar.
-            if (current.id === 'heroCarousel' && dir === 1) {
+            if ((current.id === 'heroCarousel' || current.id === 'specialVideo') && dir === 1) {
                 var firstTile = document.querySelector('.app-tile');
                 if (firstTile) { setMainFocus(firstTile); return; }
             }
@@ -2677,6 +2886,7 @@
 
             // Main Dashboard Spatial Navigation
             if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && mainNavItems[curIndex] && mainNavItems[curIndex].id === 'heroCarousel') {
+                if (e.key === 'ArrowLeft' && SPECIAL) { setMainFocus(document.getElementById('specialVideo')); e.preventDefault(); return; }
                 showSlide(carousel.index + (e.key === 'ArrowLeft' ? -1 : 1));
                 e.preventDefault();
                 return;
@@ -2704,15 +2914,28 @@
         });
 
         // --- Boot Sequence ---
+        if (PROFILE.name) {
+            document.getElementById('brandTitle').textContent = PROFILE.name;
+            document.title = PROFILE.name;
+        }
+        setupSpecialVideo();
+        setupPhotoCarousel();
         renderAppsShelf();
         applyTheme();
         fetchWeather();
         loadCarousel();
-        fetchNews();
+        // O perfil pode tirar as notícias (news: false).
+        var SHOW_NEWS = PROFILE.news !== false;
+        if (SHOW_NEWS) fetchNews();
+        else {
+            document.getElementById('newsPanel').hidden = true;
+            document.querySelector('.info-row').classList.add('no-news');
+        }
+        setupMessages();
         discoverTVApps();
         // Refresh weather every 30 mins and news every 15; the carousel checks hourly whether its 3 days are up
         setInterval(fetchWeather, 30 * 60 * 1000);
-        setInterval(fetchNews, 15 * 60 * 1000);
+        if (SHOW_NEWS) setInterval(fetchNews, 15 * 60 * 1000);
         setInterval(loadCarousel, 60 * 60 * 1000);
     </script>
 </body>
