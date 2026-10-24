@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free My TV</title>
+    <script src="webOSTV.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% -10%, #171d33 0%, #0a0e1a 55%, #04060a 100%);
+            --glass-shelf: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.13);
+            --glass-focus-border: rgba(255, 255, 255, 0.95);
+            --text-primary: #f5f5f7;
+            --text-secondary: rgba(245, 245, 247, 0.65);
+            --accent: #0a84ff;
+        }
+
+        body.theme-day {
+            --bg-gradient: radial-gradient(circle at 50% -10%, #2b4c7e 0%, #152744 55%, #091326 100%);
+            --glass-shelf: rgba(255, 255, 255, 0.11);
+        }
+
+        body.theme-sunset {
+            --bg-gradient: radial-gradient(circle at 50% -10%, #4a2138 0%, #1e132a 55%, #08060c 100%);
+            --accent: #ff9f0a;
+        }
+
+        body.theme-oled {
+            --bg-gradient: radial-gradient(circle at 50% -10%, #0a0c12 0%, #000000 60%, #000000 100%);
+            --glass-shelf: rgba(255, 255, 255, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-gradient);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: background 1.2s ease;
+        }
+
+        /* Ambient Dynamic Glow */
+        .ambient-glow {
+            position: absolute;
+            top: -15%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(10, 132, 255, 0.18) 0%, rgba(0, 0, 0, 0) 70%);
+            filter: blur(60px);
+            pointer-events: none;
+            /* Only opacity/transform animate (compositor-only). The gradient color itself
+               snaps instantly on focus change so the GPU never re-blurs mid-transition
+               while rapidly navigating with the remote's D-Pad. */
+            transition: opacity 0.35s ease;
+            will-change: opacity;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 34px 54px;
+            justify-content: space-between;
+        }
+
+        /* Top Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0a84ff, #0050c8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4);
+        }
+
+        .brand-logo svg {
+            width: 19px;
+            height: 19px;
+            fill: #ffffff;
+        }
+
+        .brand-title {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.6px;
+        }
+
+        .tag-pill {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(48, 209, 88, 0.15);
+            color: #30d158;
+            border: 1px solid rgba(48, 209, 88, 0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(14px);
+            padding: 8px 16px;
+            border-radius: 16px;
+            border: 1.5px solid var(--glass-border);
+            cursor: pointer;
+            outline: none;
+            will-change: transform;
+            transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .header-btn:hover,
+        .header-btn:focus,
+        .header-btn.focused {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--glass-focus-border);
+            transform: scale(1.06);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(14px);
+            padding: 7px 16px;
+            border-radius: 16px;
+            border: 1.5px solid var(--glass-border);
+            cursor: pointer;
+            will-change: transform;
+            transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .weather-widget:hover,
+        .weather-widget.focused {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: var(--glass-focus-border);
+            transform: scale(1.05);
+        }
+
+        .weather-sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .clock-group {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+        }
+
+        .clock {
+            font-size: 30px;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .date {
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        /* Top Shelf Hero Details */
+        .hero-shelf {
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .hero-tag {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .hero-title {
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 6px;
+            line-height: 1.1;
+        }
+
+        .hero-desc {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            max-width: 820px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Glass App Shelf */
+        .shelf-wrapper {
+            background: var(--glass-shelf);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 20px 26px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .shelf-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .shelf-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .shelf-hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .shelf-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 18px;
+        }
+
+        .app-tile {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 22px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            cursor: pointer;
+            outline: none;
+            position: relative;
+            will-change: transform;
+            transition: transform 0.28s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+            transform: scale(1) translateZ(0);
+            padding: 0;
+        }
+
+        .app-tile:hover,
+        .app-tile:focus,
+        .app-tile.focused {
+            transform: scale(1.04) translateY(-4px) translateZ(0);
+            border-color: var(--glass-focus-border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(255, 255, 255, 0.25);
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.17);
+        }
+
+        .app-icon {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .app-icon svg { width: 75%; height: 75%; }
+        .app-icon img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .app-icon img.tile-brand-logo { width: 76%; height: 76%; }
+        .app-art-fallback {
+            font-size: 25px;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            padding: 12px;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        .app-label {
+            width: 100%;
+            padding: 12px 8px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hdmi-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        /* Trending Picks Row */
+        .picks-section {
+            margin-top: 6px;
+        }
+
+        .picks-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .picks-header {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .picks-source-badge {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .picks-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .picks-tab {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 6px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            outline: none;
+            will-change: transform;
+            transition: transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+
+        .picks-tab.active {
+            color: var(--text-primary);
+            background: rgba(10, 132, 255, 0.22);
+            border-color: #0a84ff;
+        }
+
+        .picks-tab:hover,
+        .picks-tab:focus,
+        .picks-tab.focused {
+            border-color: var(--glass-focus-border);
+            transform: scale(1.06);
+        }
+
+        .picks-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .pick-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 18px;
+            height: 128px;
+            display: flex;
+            overflow: hidden;
+            cursor: pointer;
+            outline: none;
+            will-change: transform;
+            transition: transform 0.26s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+            transform: translateZ(0);
+            position: relative;
+        }
+
+        .pick-card:hover,
+        .pick-card:focus,
+        .pick-card.focused {
+            transform: scale(1.04) translateY(-4px) translateZ(0);
+            border-color: var(--glass-focus-border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .pick-poster {
+            width: 92px;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            background-color: #1a2030;
+        }
+
+        .pick-meta {
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            overflow: hidden;
+        }
+
+        .pick-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .pick-title {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pick-service {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Modal Overlay (Settings & Customize Shelf) */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 6, 12, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 960px;
+            max-height: 86vh;
+            background: rgba(22, 27, 40, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 28px;
+            padding: 32px 38px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85);
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .modal-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .app-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .app-toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 10px 14px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .app-toggle-item.selected {
+            background: rgba(10, 132, 255, 0.22);
+            border-color: #0a84ff;
+        }
+
+        .app-toggle-item:hover,
+        .app-toggle-item.focused {
+            transform: scale(1.03);
+            border-color: #ffffff;
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .shelf-edit-actions { display: flex; align-items: center; gap: 10px; }
+        .shelf-edit-actions[hidden], #reorderShelfBtn[hidden] { display: none; }
+        .shelf-edit-actions button, #reorderShelfBtn { padding: 7px 14px; font-size: 14px; }
+        .app-tile.moving { outline: 3px solid #fff; transform: translateY(-8px); }
+
+        .app-tile[aria-busy="true"] { border-color: var(--accent); }
+
+        .settings-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-group label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .field-input {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.16);
+            border-radius: 12px;
+            padding: 10px 14px;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .field-input:focus,
+        .field-input.focused {
+            border-color: var(--accent);
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #ffffff;
+            border: 2px solid transparent;
+            padding: 10px 24px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 2px solid transparent;
+            padding: 10px 20px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover, .btn-primary.focused,
+        .btn-secondary:hover, .btn-secondary.focused {
+            border-color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        /* Toast Popup */
+        .toast-msg {
+            position: fixed;
+            top: 24px;
+            right: 36px;
+            background: rgba(20, 24, 35, 0.92);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Weather & Sun Drawer */
+        .drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(4, 6, 12, 0.55);
+            z-index: 500;
+            display: none;
+            justify-content: flex-end;
+        }
+
+        .drawer-backdrop.active {
+            display: flex;
+        }
+
+        .drawer-panel {
+            width: 460px;
+            max-width: 90vw;
+            height: 100%;
+            background: rgba(18, 22, 34, 0.96);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 32px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.3, 1.1, 0.4, 1);
+            overflow-y: auto;
+        }
+
+        .drawer-backdrop.active .drawer-panel {
+            transform: translateX(0);
+        }
+
+        .drawer-current {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .drawer-current-icon {
+            font-size: 48px;
+        }
+
+        .drawer-current-temp {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .drawer-current-sub {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .drawer-hourly {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 4px 2px;
+        }
+
+        .drawer-hour-chip {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 10px 8px;
+            text-align: center;
+            min-width: 58px;
+            flex-shrink: 0;
+        }
+
+        .drawer-hour-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .drawer-hour-icon {
+            font-size: 20px;
+            margin: 4px 0;
+        }
+
+        .drawer-hour-temp {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .drawer-sun-row {
+            display: flex;
+            gap: 24px;
+        }
+
+        .drawer-sun-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+        }
+
+        .drawer-sun-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .drawer-sun-value {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        /* OLED-Safe Idle Screensaver */
+        .screensaver {
+            position: fixed;
+            inset: 0;
+            background: #000000;
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: none;
+        }
+
+        .screensaver.active {
+            display: flex;
+        }
+
+        .screensaver-clock-wrap {
+            text-align: center;
+            transition: transform 1.4s ease-in-out;
+        }
+
+        .screensaver-clock {
+            font-size: 132px;
+            font-weight: 200;
+            letter-spacing: -2px;
+            color: rgba(255, 255, 255, 0.82);
+        }
+
+        .screensaver-date {
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow" id="ambientGlow"></div>
+    <div class="toast-msg" id="toastMsg" role="status" aria-live="polite">Launching...</div>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="brand-group">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+                </div>
+                <div class="brand-title">Free My TV</div>
+                <div class="tag-pill" id="themeBadge">60 FPS • Onboard</div>
+            </div>
+            <div class="header-info">
+                <button class="header-btn nav-item" id="customizeBtn" data-tag="Personalize" data-title="Customize Shelf & Settings" data-desc="Choose which installed TV apps appear on your shelf, configure weather city, and TMDB key.">
+                    <span>⚙️ Customize</span>
+                </button>
+                <div class="weather-widget nav-item" id="weatherWidget" data-tag="Live Forecast" data-title="Local Weather & Sunset" data-desc="Live temperature and sky conditions powered by Open-Meteo.">
+                    <span id="weatherIcon">☀️</span>
+                    <div>
+                        <div id="weatherText">Loading...</div>
+                        <div class="weather-sub" id="weatherSub">Auto-detecting</div>
+                    </div>
+                </div>
+                <div class="clock-group">
+                    <div class="date" id="dateText">Mon, Oct 19</div>
+                    <div class="clock" id="clockText">20:30</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Shelf (Hero Preview) -->
+        <div class="hero-shelf">
+            <div class="hero-tag" id="heroTag">App Launcher</div>
+            <div class="hero-title" id="heroTitle">Clean & Ad-Free Home</div>
+            <div class="hero-desc" id="heroDesc">Navigate smoothly with Magic Remote D-Pad or pointer. Launch apps in 100ms with zero ads.</div>
+        </div>
+
+        <!-- Glass Shelf: Apps -->
+        <div class="shelf-wrapper">
+            <div class="shelf-top-bar">
+                <div class="shelf-header">Favorite Apps</div>
+                <div class="shelf-hint" id="shelfCountHint" aria-live="polite">Instant Native Launch</div>
+                <button class="header-btn nav-item" id="reorderShelfBtn" data-title="Reorder tiles" data-desc="Rearrange your apps right here on the shelf.">Reorder</button>
+                <div class="shelf-edit-actions" id="shelfEditActions" hidden>
+                    <button class="header-btn nav-item" id="saveShelfOrder" data-title="Save tile order">Done</button>
+                    <button class="header-btn nav-item" id="cancelShelfOrder" data-title="Cancel reordering">Cancel</button>
+                </div>
+            </div>
+            <div class="shelf-grid" id="appsGrid"></div>
+        </div>
+
+        <!-- Trending Picks Row -->
+        <div class="picks-section">
+            <div class="picks-top-bar">
+                <div class="picks-header">Trending This Week</div>
+                <div class="picks-tabs">
+                    <button class="picks-tab nav-item active" id="tabMovies" data-tag="Trending" data-title="Movies" data-desc="Switch the row below to this week's trending movies.">Movies</button>
+                    <button class="picks-tab nav-item" id="tabShows" data-tag="Trending" data-title="Shows" data-desc="Switch the row below to this week's trending TV shows.">Shows</button>
+                </div>
+                <div class="picks-source-badge" id="picksSourceBadge">Live Feed</div>
+            </div>
+            <div class="picks-grid" id="picksGrid"></div>
+        </div>
+    </div>
+
+    <!-- Customize Shelf & Settings Modal -->
+    <div class="modal-backdrop" id="settingsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title">Customize Free My TV</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">Press BACK or ESC to close</div>
+            </div>
+
+            <div>
+                <div class="modal-section-title">1. Select Apps for Glass Shelf (Click to Toggle)</div>
+                <div class="app-selector-grid" id="appSelectorGrid"></div>
+
+            </div>
+
+            <div>
+                <div class="modal-section-title">2. HDMI Devices</div>
+                <p style="color: var(--text-secondary); margin: 0 0 12px;">Press a port to cycle its device. Save &amp; Apply to keep your choices.</p>
+                <div class="hdmi-options" id="hdmiOptions"></div>
+            </div>
+
+            <div>
+                <div class="modal-section-title">3. Weather, Theme & TMDB API</div>
+                <div class="settings-row">
+                    <div class="field-group">
+                        <label>City Name (or leave Auto)</label>
+                        <input type="text" class="field-input modal-nav" id="cfgCity" placeholder="e.g. Sao Paulo, Lisbon, NYC">
+                    </div>
+                    <div class="field-group">
+                        <label>Theme Mode</label>
+                        <select class="field-input modal-nav" id="cfgTheme">
+                            <option value="auto">Auto (Follows Sunset)</option>
+                            <option value="night">Deep Midnight (Default)</option>
+                            <option value="oled">Pure OLED Black</option>
+                            <option value="day">Daylight Blue</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>TMDB API Key (Optional)</label>
+                        <input type="text" class="field-input modal-nav" id="cfgTmdbKey" placeholder="Optional for TMDB Trending">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary modal-nav" id="resetDefaultBtn">Reset Defaults</button>
+                <button class="btn-secondary modal-nav" id="closeModalBtn">Cancel</button>
+                <button class="btn-primary modal-nav" id="saveModalBtn">Save & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather & Sun Drawer -->
+    <div class="drawer-backdrop" id="weatherDrawer">
+        <div class="drawer-panel">
+            <div class="modal-header">
+                <div class="modal-title">Weather & Sun</div>
+                <div style="font-size: 13px; color: var(--text-secondary);">Press BACK or ESC to close</div>
+            </div>
+
+            <div class="drawer-current">
+                <span class="drawer-current-icon" id="drawerIcon">☀️</span>
+                <div>
+                    <div class="drawer-current-temp" id="drawerTemp">--°C</div>
+                    <div class="drawer-current-sub" id="drawerCityLabel">Loading...</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="modal-section-title">Next Hours</div>
+                <div class="drawer-hourly" id="drawerHourly"></div>
+            </div>
+
+            <div class="drawer-sun-row">
+                <div class="drawer-sun-item">
+                    <span>🌅</span>
+                    <div>
+                        <div class="drawer-sun-label">Sunrise</div>
+                        <div class="drawer-sun-value" id="drawerSunrise">--:--</div>
+                    </div>
+                </div>
+                <div class="drawer-sun-item">
+                    <span>🌇</span>
+                    <div>
+                        <div class="drawer-sun-label">Sunset</div>
+                        <div class="drawer-sun-value" id="drawerSunset">--:--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-secondary" id="closeDrawerBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OLED-Safe Idle Screensaver -->
+    <div class="screensaver" id="screensaverOverlay">
+        <div class="screensaver-clock-wrap" id="screensaverClockWrap">
+            <div class="screensaver-clock" id="screensaverClock">20:30</div>
+            <div class="screensaver-date" id="screensaverDate">Mon, Oct 19</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Default Catalog of Apps ---
+        const DEFAULT_CATALOG = [
+            { id: 'youtube.leanback.v4', title: 'YouTube', tag: 'Streaming', desc: 'Watch 4K videos, live streams, music, and coding radio.', color: '#ff0000', badge: 'YT', bg: 'linear-gradient(135deg, #ff0000, #b00000)' },
+            { id: 'netflix', title: 'Netflix', tag: 'Movies & Series', desc: 'Unlimited movies, TV shows, and originals in 4K Dolby Vision.', color: '#e50914', badge: 'N', bg: 'linear-gradient(135deg, #1f1f1f, #080808)' },
+            { id: 'cdp-30', title: 'Plex', tag: 'Personal Media', desc: 'Stream your personal home cinema, movies, and music library.', color: '#e5a00d', badge: '>', bg: 'linear-gradient(135deg, #e5a00d, #9e6d00)' },
+            { id: 'com.crunchyroll.webapp', title: 'Crunchyroll', tag: 'Anime', desc: 'Stream the world\'s largest anime library and simulcasts.', color: '#f47521', badge: 'CR', bg: 'linear-gradient(135deg, #f47521, #c4570d)' },
+            { id: 'globoplaywebos', title: 'Globoplay', tag: 'Brazil Streaming', desc: 'Original series, live channels, sports, and cinema.', color: '#fb003f', badge: 'globo', bg: 'linear-gradient(135deg, #fb003f, #aa002a)' },
+            { id: 'com.webos.app.hdmi1', title: 'HDMI 1', tag: 'External Input', desc: 'Switch directly to HDMI 1 (PC / Gaming Console).', color: '#0a84ff', badge: 'HDMI 1', bg: 'linear-gradient(135deg, #0a84ff, #004ec4)' },
+            { id: 'com.webos.app.hdmi2', title: 'HDMI 2', tag: 'External Input', desc: 'Switch directly to HDMI 2 input.', color: '#00c7be', badge: 'HDMI 2', bg: 'linear-gradient(135deg, #00c7be, #007a74)' },
+            { id: 'com.webos.app.hdmi3', title: 'HDMI 3', tag: 'External Input', desc: 'Switch directly to HDMI 3 input.', color: '#0a84ff', badge: 'HDMI 3', bg: 'linear-gradient(135deg, #0a84ff, #004ec4)' },
+            { id: 'com.webos.app.hdmi4', title: 'HDMI 4', tag: 'External Input', desc: 'Switch directly to HDMI 4 input.', color: '#0a84ff', badge: 'HDMI 4', bg: 'linear-gradient(135deg, #0a84ff, #004ec4)' },
+            { id: 'com.webos.app.browser', title: 'Browser', tag: 'Internet', desc: 'Full-screen web browsing on your LG Smart TV.', color: '#5856d6', badge: 'WEB', bg: 'linear-gradient(135deg, #5856d6, #3634a3)' },
+            { id: 'org.webosbrew.hbchannel', title: 'Homebrew', tag: 'System', desc: 'Homebrew Channel app store, YouTube AdFree, and system tweaks.', color: '#cf0652', badge: 'HB', bg: 'linear-gradient(135deg, #cf0652, #8b0034)' },
+            { id: 'com.webos.app.mediadiscovery', title: 'Media Player', tag: 'Local Media', desc: 'Play photos, videos, and music from USB or DLNA servers.', color: '#7e56b1', badge: 'USB', bg: 'linear-gradient(135deg, #7e56b1, #4f3278)' },
+            { id: 'amazon', title: 'Prime Video', tag: 'Movies & Shows', desc: 'Watch Amazon Originals, popular movies, and live sports.', color: '#00a8e1', badge: 'prime', bg: 'linear-gradient(135deg, #00a8e1, #00628a)' },
+            { id: 'com.disney.disneyplus-prod', title: 'Disney+', tag: 'Streaming', desc: 'Disney, Pixar, Marvel, Star Wars, and National Geographic.', color: '#113ccf', badge: 'D+', bg: 'linear-gradient(135deg, #113ccf, #071961)' },
+            { id: 'spotify-beehive', title: 'Spotify', tag: 'Music', desc: 'Listen to millions of songs, albums, and podcasts on your TV.', color: '#1db954', badge: 'SP', bg: 'linear-gradient(135deg, #1db954, #0f7833)' }
+        ];
+
+        // Device artwork is bundled inline so HDMI tiles also work offline.
+        const DEVICE_PRESETS = [
+            { key: 'default', title: '', color: '#0a84ff', shape: 'input' },
+            { key: 'ps5', title: 'PS5', color: '#123ca6', logo: 'playstation5' },
+            { key: 'ps4', title: 'PS4', color: '#173070', logo: 'playstation4' },
+            { key: 'xbox', title: 'Xbox', color: '#107c10', logo: 'xbox' },
+            { key: 'switch', title: 'Nintendo Switch', color: '#c82131', logo: 'nintendoswitch' },
+            { key: 'pc', title: 'Gaming PC', color: '#633ca6', shape: 'pc' }
+        ];
+        function readDeviceChoices() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('fmtv_hdmi_devices') || '{}');
+                return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+            } catch (e) { return {}; }
+        }
+        function isHDMI(app) { return /^com\.webos\.app\.hdmi[1-4]$/.test(app.id); }
+        function devicePreset(app, choices) {
+            if (!isHDMI(app)) return DEVICE_PRESETS[0];
+            return DEVICE_PRESETS.find(function(p) { return p.key === choices[app.id]; }) || DEVICE_PRESETS[0];
+        }
+        function deviceArtwork(shape) {
+            const drawings = {
+                pc: '<rect x="15" y="26" width="90" height="61" rx="6" fill="none" stroke="white" stroke-width="6"/><path d="M60 88v13m-22 0h44M24 75h72" stroke="white" stroke-width="6"/>',
+                input: '<path d="M25 34h70v37L80 86H40L25 71Z" fill="none" stroke="white" stroke-width="6"/><path d="M39 48v18m14-18v18m14-18v18m14-18v18" stroke="white" stroke-width="5"/>'
+            };
+            return '<svg viewBox="0 0 120 120" aria-hidden="true">' + drawings[shape] + '</svg>';
+        }
+        const APP_LOGOS = {
+            'youtube.leanback.v4': 'youtube',
+            'netflix': 'netflix',
+            'cdp-30': 'plex',
+            'com.crunchyroll.webapp': 'crunchyroll',
+            'globoplaywebos': 'globoplay',
+            'amazon': 'amazonprime',
+            'com.disney.disneyplus-prod': 'disneyplus',
+            'spotify-beehive': 'spotify'
+        };
+        function addTileImage(container, url, branded) {
+            const img = document.createElement('img');
+            img.alt = '';
+            if (branded) img.className = 'tile-brand-logo';
+            const fallback = container.firstElementChild;
+            if (fallback) fallback.style.visibility = 'hidden';
+            img.onload = function() { if (fallback) fallback.style.visibility = 'hidden'; };
+            img.onerror = function() { img.remove(); if (fallback) fallback.style.visibility = ''; };
+            img.src = url;
+            container.appendChild(img);
+        }
+
+        function launchPointIcon(lp) {
+            const icon = lp.largeIcon || lp.icon || '';
+            if (/^(https?:|file:|data:image\/)/i.test(icon)) return icon;
+            if (icon.charAt(0) === '/') return 'file://' + icon;
+            if (icon && lp.folderPath) return 'file://' + lp.folderPath.replace(/\/$/, '') + '/' + icon;
+            return ''; // Unresolvable paths use the readable tile fallback.
+        }
+
+        // Defaults favor the streaming apps with the broadest global install base
+        // (YouTube/Netflix/Prime/Disney+) over niche regional or personal-media apps
+        // like Plex or Globoplay, which stay one tap away in Customize for anyone who uses them.
+        const DEFAULT_FAVORITES = [
+            'youtube.leanback.v4',
+            'netflix',
+            'amazon',
+            'com.disney.disneyplus-prod',
+            'com.crunchyroll.webapp',
+            'com.webos.app.hdmi1',
+            'com.webos.app.browser',
+            'org.webosbrew.hbchannel'
+        ];
+
+        const FALLBACK_MOVIES = [
+            { title: 'Dune: Part Two', badge: 'Sci-Fi • 8.8★', service: 'Watch on Max / Netflix', app: 'netflix', desc: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators.', poster: 'https://image.tmdb.org/t/p/w300/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg', color: '#e5a00d' },
+            { title: 'Oppenheimer', badge: 'Drama • 8.3★', service: 'Watch on Prime Video', app: 'amazon', desc: 'The story of American scientist J. Robert Oppenheimer and his role in developing the atomic bomb.', poster: '', color: '#00a8e1' },
+            { title: 'Spider-Man: Across the Spider-Verse', badge: 'Animation • 8.6★', service: 'Watch on Netflix', app: 'netflix', desc: 'Miles Morales catapults across the Multiverse to team up with Gwen Stacy and a new crew of Spider-People.', poster: '', color: '#5856d6' },
+            { title: 'Barbie', badge: 'Comedy • 7.0★', service: 'Watch on Max', app: 'netflix', desc: 'Barbie and Ken venture from Barbie Land to the real world in search of true happiness.', poster: '', color: '#ff375f' }
+        ];
+
+        const FALLBACK_SHOWS = [
+            { title: 'Severance', badge: 'Thriller • 8.7★', service: 'Trending Series', app: 'netflix', desc: 'Mark leads a team of office workers whose memories have been surgically divided between work and personal lives.', poster: 'https://image.tmdb.org/t/p/w300/e9Lra4Wv77L84a0d8lEwB47zYqS.jpg', color: '#0a84ff' },
+            { title: 'Demon Slayer: Infinity', badge: 'Anime • 8.9★', service: 'Watch on Crunchyroll', app: 'com.crunchyroll.webapp', desc: 'Tanjiro and the Hashira face the Upper Rank demons in the final stronghold.', poster: 'https://image.tmdb.org/t/p/w300/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg', color: '#f47521' },
+            { title: 'The Last of Us', badge: 'Drama • 8.8★', service: 'Watch on Max', app: 'netflix', desc: 'Joel and Ellie navigate a brutal, infected America in search of a cure.', poster: '', color: '#e5a00d' },
+            { title: 'Stranger Things', badge: 'Sci-Fi • 8.6★', service: 'Watch on Netflix', app: 'netflix', desc: 'A group of kids uncover supernatural mysteries in the small town of Hawkins, Indiana.', poster: '', color: '#ff0000' }
+        ];
+
+        // --- Persistent State ---
+        let state = {
+            favorites: JSON.parse(localStorage.getItem('fmtv_favorites') || 'null') || DEFAULT_FAVORITES.slice(),
+            hdmiDevices: readDeviceChoices(),
+            city: localStorage.getItem('fmtv_city') || '',
+            lat: parseFloat(localStorage.getItem('fmtv_lat') || '0'),
+            lon: parseFloat(localStorage.getItem('fmtv_lon') || '0'),
+            theme: localStorage.getItem('fmtv_theme') || 'auto',
+            tmdbKey: localStorage.getItem('fmtv_tmdb_key') || '',
+            catalog: DEFAULT_CATALOG.slice(),
+            picksTab: 'movies',
+            hourlyForecast: [],
+            sunrise: '',
+            sunset: '',
+            isSunset: false,
+            isNight: true
+        };
+
+        // --- Clock & Date ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeStr = hours + ':' + minutes;
+            document.getElementById('clockText').textContent = timeStr;
+
+            const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', opts);
+            document.getElementById('dateText').textContent = dateStr;
+
+            document.getElementById('screensaverClock').textContent = timeStr;
+            document.getElementById('screensaverDate').textContent = dateStr;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- Toast Helper ---
+        const toastEl = document.getElementById('toastMsg');
+        function showToast(msg, duration) {
+            toastEl.textContent = msg;
+            toastEl.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(function() { toastEl.style.display = 'none'; }, duration || 2400);
+        }
+
+        // --- Theme Engine ---
+        function applyTheme() {
+            document.body.classList.remove('theme-day', 'theme-sunset', 'theme-oled');
+            const badge = document.getElementById('themeBadge');
+            if (state.theme === 'oled') {
+                document.body.classList.add('theme-oled');
+                badge.textContent = 'OLED Zero • 60 FPS';
+            } else if (state.theme === 'day') {
+                document.body.classList.add('theme-day');
+                badge.textContent = 'Daylight • 60 FPS';
+            } else if (state.theme === 'auto') {
+                if (state.isSunset) {
+                    document.body.classList.add('theme-sunset');
+                    badge.textContent = 'Sunset • 60 FPS';
+                } else if (!state.isNight) {
+                    document.body.classList.add('theme-day');
+                    badge.textContent = 'Daylight • 60 FPS';
+                } else {
+                    badge.textContent = 'Night • 60 FPS';
+                }
+            } else {
+                badge.textContent = '60 FPS • Onboard';
+            }
+        }
+
+        // --- Live Weather & Sunset (Open-Meteo) ---
+        const WMO_CODES = {
+            0: ['☀️', 'Clear Sky'], 1: ['🌤️', 'Mostly Clear'], 2: ['⛅', 'Partly Cloudy'],
+            3: ['☁️', 'Overcast'], 45: ['🌫️', 'Foggy'], 51: ['🌦️', 'Light Drizzle'],
+            61: ['🌧️', 'Rain'], 63: ['🌧️', 'Moderate Rain'], 71: ['❄️', 'Snow'],
+            80: ['🌦️', 'Rain Showers'], 95: ['⛈️', 'Thunderstorm']
+        };
+
+        async function fetchWeather() {
+            try {
+                let lat = state.lat;
+                let lon = state.lon;
+                let cityLabel = state.city;
+
+                // Geocode city if user typed one
+                if (cityLabel) {
+                    const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(cityLabel) + '&count=1');
+                    const geoData = await geoRes.json();
+                    if (geoData.results && geoData.results.length > 0) {
+                        lat = geoData.results[0].latitude;
+                        lon = geoData.results[0].longitude;
+                        cityLabel = geoData.results[0].name;
+                    }
+                }
+
+                // Auto-locate by IP if not set
+                if (!lat && !lon) {
+                    try {
+                        const ipRes = await fetch('https://ipapi.co/json/');
+                        const ipData = await ipRes.json();
+                        if (ipData.latitude && ipData.longitude) {
+                            lat = ipData.latitude;
+                            lon = ipData.longitude;
+                            cityLabel = ipData.city || 'Local';
+                        }
+                    } catch (e) {}
+                }
+
+                // Default to Sao Paulo coordinates if offline/blocked
+                if (!lat && !lon) {
+                    lat = -23.55;
+                    lon = -46.63;
+                    cityLabel = cityLabel || 'São Paulo';
+                }
+
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+                    '&current=temperature_2m,weather_code,is_day' +
+                    '&hourly=temperature_2m,weather_code' +
+                    '&daily=sunrise,sunset&timezone=auto&forecast_days=2';
+                const res = await fetch(url);
+                const data = await res.json();
+
+                // Open-Meteo returns naive local wall-clock strings for the target city,
+                // so "now" must be shifted by the same UTC offset to compare correctly -
+                // comparing against the device's own local time would be wrong whenever
+                // the device and the configured city are in different timezones.
+                const localNow = typeof data.utc_offset_seconds === 'number'
+                    ? new Date(Date.now() + data.utc_offset_seconds * 1000)
+                    : new Date();
+
+                if (data.current) {
+                    const temp = Math.round(data.current.temperature_2m);
+                    const code = data.current.weather_code;
+                    const isDay = data.current.is_day === 1;
+                    const wmo = WMO_CODES[code] || ['⛅', 'Fair'];
+
+                    document.getElementById('weatherIcon').textContent = isDay ? wmo[0] : '🌙';
+                    document.getElementById('weatherText').textContent = temp + '°C • ' + wmo[1];
+
+                    let sunsetStr = '';
+                    if (data.daily) {
+                        if (data.daily.sunrise && data.daily.sunrise[0]) {
+                            state.sunrise = data.daily.sunrise[0].split('T')[1];
+                        }
+                        if (data.daily.sunset && data.daily.sunset[0]) {
+                            state.sunset = data.daily.sunset[0].split('T')[1];
+                            sunsetStr = ' • Sunset ' + state.sunset;
+                            const sunsetHour = parseInt(state.sunset.split(':')[0], 10);
+                            state.isSunset = Math.abs(localNow.getUTCHours() - sunsetHour) <= 1;
+                        }
+                    }
+                    state.isNight = !isDay;
+                    document.getElementById('weatherSub').textContent = cityLabel + sunsetStr;
+                    applyTheme();
+                }
+
+                if (data.hourly && Array.isArray(data.hourly.time)) {
+                    const nowKey = localNow.toISOString().slice(0, 13);
+                    let startIdx = data.hourly.time.findIndex(function(t) { return t.slice(0, 13) >= nowKey; });
+                    if (startIdx === -1) startIdx = 0;
+                    // 6 chips so the D-Pad-only drawer never needs scrolling to see them all
+                    state.hourlyForecast = data.hourly.time.slice(startIdx, startIdx + 6).map(function(t, i) {
+                        const idx = startIdx + i;
+                        return {
+                            hour: t.split('T')[1].slice(0, 5),
+                            temp: Math.round(data.hourly.temperature_2m[idx]),
+                            code: data.hourly.weather_code[idx]
+                        };
+                    });
+                }
+
+                renderDrawerForecast();
+            } catch (err) {
+                document.getElementById('weatherText').textContent = '22°C • Clear';
+                document.getElementById('weatherSub').textContent = state.city || 'Offline Mode';
+            }
+        }
+
+        // --- Live Trending Picks (TMDB + Live TVMaze Zero-Key Feed), split by Movies/Shows tab ---
+        async function fetchTrendingPicks() {
+            const badge = document.getElementById('picksSourceBadge');
+            const tab = state.picksTab;
+            const tmdbMediaPath = tab === 'shows' ? 'tv' : 'movie';
+            try {
+                // 1. If user provided a TMDB API Key, fetch live from TMDB for the active tab
+                if (state.tmdbKey && state.tmdbKey.trim().length > 8) {
+                    const key = state.tmdbKey.trim();
+                    const headers = key.length > 40 ? { 'Authorization': 'Bearer ' + key } : {};
+                    const url = key.length > 40
+                        ? 'https://api.themoviedb.org/3/trending/' + tmdbMediaPath + '/week?language=en-US'
+                        : 'https://api.themoviedb.org/3/trending/' + tmdbMediaPath + '/week?api_key=' + encodeURIComponent(key);
+
+                    const res = await fetch(url, { headers: headers });
+                    const data = await res.json();
+                    if (data.results && data.results.length >= 4 && tab === state.picksTab) {
+                        const items = data.results.slice(0, 4).map(function(item) {
+                            const title = item.title || item.name || 'Trending';
+                            const score = item.vote_average ? item.vote_average.toFixed(1) + '★' : 'Hot';
+                            return {
+                                title: title,
+                                badge: (tab === 'shows' ? 'Series' : 'Movie') + ' • ' + score,
+                                service: 'TMDB Trending',
+                                app: 'netflix',
+                                desc: item.overview || 'Trending worldwide this week.',
+                                poster: item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.poster_path : '',
+                                color: '#0a84ff'
+                            };
+                        });
+                        badge.textContent = 'TMDB Live';
+                        renderPicks(items);
+                        return;
+                    }
+                }
+
+                // 2. Zero-Key Live Fallback: TVMaze only has TV data, so it covers the Shows tab;
+                //    the Movies tab falls through to the curated list below without a TMDB key.
+                if (tab === 'shows') {
+                    const res = await fetch('https://api.tvmaze.com/shows?page=0');
+                    const shows = await res.json();
+                    if (Array.isArray(shows) && shows.length > 0 && tab === state.picksTab) {
+                        const topShows = shows
+                            .filter(function(s) { return s.rating && s.rating.average >= 8.4 && s.image && s.image.medium; })
+                            .sort(function() { return 0.5 - Math.random(); })
+                            .slice(0, 4)
+                            .map(function(s) {
+                                const cleanSummary = (s.summary || '').replace(/<[^>]*>/g, '');
+                                const genre = (s.genres && s.genres[0]) || 'Series';
+                                const network = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || 'Streaming';
+                                return {
+                                    title: s.name,
+                                    badge: genre + ' • ' + s.rating.average + '★',
+                                    service: 'Watch on ' + network,
+                                    app: 'netflix',
+                                    desc: cleanSummary || 'Critically acclaimed trending series.',
+                                    poster: s.image.medium,
+                                    color: '#0a84ff'
+                                };
+                            });
+                        if (topShows.length === 4) {
+                            badge.textContent = 'Live Popular Feed';
+                            renderPicks(topShows);
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            if (tab !== state.picksTab) return;
+            badge.textContent = 'Curated Picks';
+            renderPicks(tab === 'shows' ? FALLBACK_SHOWS : FALLBACK_MOVIES);
+        }
+
+        // --- Discover Installed Apps from LG webOS ---
+        function discoverTVApps() {
+            if (!window.webOS || !window.webOS.service) return;
+            try {
+                webOS.service.request("luna://com.webos.applicationManager", {
+                    method: "listLaunchPoints",
+                    parameters: {},
+                    onSuccess: function(res) {
+                        if (res && Array.isArray(res.launchPoints)) {
+                            res.launchPoints.forEach(function(lp) {
+                                const appId = lp.appId || lp.id;
+                                if (!appId) return;
+                                const exists = state.catalog.find(function(c) { return c.id === appId; });
+                                const iconUrl = launchPointIcon(lp);
+                                if (exists && iconUrl) exists.iconUrl = iconUrl;
+                                if (lp.systemApp && !exists) return;
+                                if (!exists) {
+                                    state.catalog.push({
+                                        id: appId,
+                                        title: lp.title || lp.id,
+                                        tag: 'Installed App',
+                                        desc: lp.appDescription || ('Launch ' + (lp.title || lp.id) + ' natively on your LG TV.'),
+                                        color: lp.iconColor || '#0a84ff',
+                                        badge: (lp.title || 'APP').substring(0, 3).toUpperCase(),
+                                        iconUrl: iconUrl,
+                                        bg: 'linear-gradient(135deg, ' + (lp.iconColor || '#2a344a') + ', #101420)'
+                                    });
+                                }
+                            });
+                            renderAppsShelf();
+                        }
+                    }
+                });
+            } catch (e) {}
+        }
+
+        // --- Native webOS App Launch ---
+        let shelfEdit = null;
+        let movingTileId = null;
+        let pendingLaunch = null;
+        function launchApp(appId) {
+            if (shelfEdit || pendingLaunch) return; // Ignore repeated remote presses while a request is pending.
+            const app = state.catalog.find(function(item) { return item.id === appId; });
+            const title = app ? (devicePreset(app, state.hdmiDevices).title || app.title) : appId;
+            if (!window.webOS || !window.webOS.service || typeof window.webOS.service.request !== 'function') {
+                showToast('Open ' + title + ' on your LG TV. Launching is unavailable in this preview.', 5000);
+                return;
+            }
+            const request = { timer: null };
+            pendingLaunch = request;
+            const tiles = Array.from(document.querySelectorAll('.app-tile')).filter(function(tile) { return tile.dataset.id === appId; });
+            tiles.forEach(function(tile) { tile.setAttribute('aria-busy', 'true'); });
+            function finish(message) {
+                if (pendingLaunch !== request) return;
+                clearTimeout(request.timer);
+                pendingLaunch = null;
+                tiles.forEach(function(tile) { tile.removeAttribute('aria-busy'); });
+                showToast(message, 5000);
+            }
+            function failure(error) {
+                const detail = error && error.errorText || '';
+                if (/not installed|not found|does not exist|unknown app/i.test(detail)) {
+                    finish(title + ' is not installed or is unavailable on this TV.');
+                } else {
+                    finish('Could not open ' + title + '. Check that it is installed, then try again.');
+                }
+            }
+            function fallback(originalError) {
+                if (pendingLaunch !== request) return;
+                // Only known app-ID characters may enter the legacy shell-based fallback.
+                if (!/^[a-zA-Z0-9._-]+$/.test(appId)) { failure(originalError); return; }
+                try {
+                    webOS.service.request('luna://org.webosbrew.hbchannel.service', {
+                        method: 'exec',
+                        parameters: { command: "luna-send-pub -n 1 luna://com.webos.applicationManager/launch '{\"id\":\"" + appId + "\"}'" },
+                        onSuccess: function(result) {
+                            // Successful exec alone does not confirm that the destination opened.
+                            if (pendingLaunch !== request) return;
+                            let reply = null;
+                            try { reply = JSON.parse(result && result.stdout || ''); } catch (e) {}
+                            if (reply && reply.returnValue === true) finish('Opening ' + title + '…');
+                            else if (reply && reply.returnValue === false) failure(reply);
+                            else finish('Could not confirm ' + title + ' opened. Please try again.');
+                        },
+                        onFailure: function() { failure(originalError); }
+                    });
+                } catch (e) { failure(originalError); }
+            }
+            showToast('Opening ' + title + '…', 8000);
+            request.timer = setTimeout(function() {
+                finish('No response opening ' + title + '. Please try again.');
+            }, 8000);
+            try {
+                webOS.service.request('luna://com.webos.applicationManager', {
+                    method: 'launch',
+                    parameters: { id: appId },
+                    onSuccess: function(result) {
+                        if (pendingLaunch !== request) return;
+                        if (result && result.returnValue === false) fallback(result);
+                        else finish('Opening ' + title + '…');
+                    },
+                    onFailure: fallback
+                });
+            } catch (e) { failure(e); }
+        }
+
+        // --- Render App Shelf & Trending Row ---
+        function renderAppsShelf() {
+            const grid = document.getElementById('appsGrid');
+            grid.innerHTML = '';
+
+            const favItems = (shelfEdit || state.favorites)
+                .map(function(id) { return state.catalog.find(function(c) { return c.id === id; }); })
+                .filter(Boolean)
+                .slice(0, 8);
+
+            favItems.forEach(function(app) {
+                const device = devicePreset(app, state.hdmiDevices);
+                const title = device.title || app.title;
+                const btn = document.createElement('button');
+                btn.className = 'app-tile nav-item' + (movingTileId === app.id ? ' moving' : '');
+                if (shelfEdit) btn.setAttribute('aria-pressed', String(movingTileId === app.id));
+                btn.dataset.id = app.id;
+                btn.dataset.tag = app.tag;
+                btn.dataset.title = title;
+                btn.dataset.desc = device.title ? 'Play ' + device.title + ' on ' + app.title + '.' : app.desc;
+                btn.setAttribute('aria-label', title + (device.title ? ' — ' + app.title : ''));
+                btn.dataset.color = app.color;
+
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'app-icon';
+                iconDiv.style.background = app.bg || 'linear-gradient(135deg, #0a84ff, #0040a0)';
+                if (isHDMI(app)) {
+                    iconDiv.style.background = device.color;
+                    if (device.logo) {
+                        const fallback = document.createElement('span');
+                        fallback.className = 'app-art-fallback';
+                        fallback.textContent = device.title;
+                        iconDiv.appendChild(fallback);
+                        addTileImage(iconDiv, 'assets/brands/' + device.logo + '.svg', true);
+                    } else {
+                        iconDiv.innerHTML = deviceArtwork(device.shape);
+                    }
+                } else {
+                    const fallback = document.createElement('span');
+                    fallback.className = 'app-art-fallback';
+                    fallback.textContent = app.title;
+                    iconDiv.appendChild(fallback);
+                    const logo = APP_LOGOS[app.id];
+                    if (logo || app.iconUrl) {
+                        addTileImage(iconDiv, logo ? 'assets/brands/' + logo + '.svg' : app.iconUrl, !!logo);
+                    }
+                }
+
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'app-label';
+                labelDiv.textContent = title + (device.title ? ' · ' + app.title : '');
+
+                btn.appendChild(iconDiv);
+                btn.appendChild(labelDiv);
+
+                btn.addEventListener('mouseenter', function() { setMainFocus(btn); });
+                btn.addEventListener('click', function() {
+                    if (shelfEdit) { movingTileId = movingTileId === app.id ? null : app.id; renderAppsShelf(); focusShelfTile(app.id); }
+                    else launchApp(app.id);
+                });
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('shelfCountHint').textContent = shelfEdit ? (movingTileId ? '← / → Move • OK Place • Back Cancel' : 'Select a tile • OK Pick up • Done to save') : favItems.length + ' Apps • Instant Launch';
+            refreshMainNavList();
+        }
+
+        function renderPicks(picks) {
+            const grid = document.getElementById('picksGrid');
+            grid.innerHTML = '';
+
+            picks.forEach(function(pick) {
+                const card = document.createElement('div');
+                card.className = 'pick-card nav-item';
+                card.dataset.app = pick.app;
+                card.dataset.tag = pick.badge;
+                card.dataset.title = pick.title;
+                card.dataset.desc = pick.desc;
+                card.dataset.color = pick.color || '#0a84ff';
+
+                const poster = document.createElement('div');
+                poster.className = 'pick-poster';
+                // Poster URLs come from third-party APIs, so only plain https URLs may enter the CSS url().
+                if (pick.poster && /^https:\/\/[^\s"'()\\]+$/.test(pick.poster)) {
+                    poster.style.backgroundImage = "url('" + pick.poster + "')";
+                }
+
+                // Pick text comes from TMDB/TVMaze (TVMaze is community-edited), so it is set as text, never HTML.
+                const meta = document.createElement('div');
+                meta.className = 'pick-meta';
+                [['pick-badge', pick.badge], ['pick-title', pick.title], ['pick-service', pick.service]].forEach(function(part) {
+                    const el = document.createElement('div');
+                    el.className = part[0];
+                    el.textContent = part[1];
+                    meta.appendChild(el);
+                });
+
+                card.appendChild(poster);
+                card.appendChild(meta);
+
+                card.addEventListener('mouseenter', function() { setMainFocus(card); });
+                card.addEventListener('click', function() { launchApp(pick.app); });
+                grid.appendChild(card);
+            });
+
+            refreshMainNavList();
+        }
+
+        function focusShelfTile(id) {
+            const tile = Array.from(document.querySelectorAll('.app-tile')).find(function(el) { return el.dataset.id === id; });
+            if (tile) setMainFocus(tile);
+        }
+        function moveShelfTile(direction) {
+            if (!shelfEdit || !movingTileId) { showToast('Select a tile first'); return; }
+            const index = shelfEdit.indexOf(movingTileId);
+            const destination = index + direction;
+            if (index < 0 || destination < 0 || destination >= shelfEdit.length) return;
+            shelfEdit.splice(index, 1);
+            shelfEdit.splice(destination, 0, movingTileId);
+            renderAppsShelf();
+            focusShelfTile(movingTileId);
+        }
+        function finishShelfEdit(save) {
+            if (!shelfEdit) return;
+            if (save) {
+                try { localStorage.setItem('fmtv_favorites', JSON.stringify(shelfEdit)); }
+                catch (e) { showToast('Could not save the order. Please try again.', 5000); return; }
+                state.favorites = shelfEdit.slice();
+            }
+            shelfEdit = null;
+            movingTileId = null;
+            document.getElementById('reorderShelfBtn').hidden = false;
+            document.getElementById('shelfEditActions').hidden = true;
+            renderAppsShelf();
+            setMainFocus(document.getElementById('reorderShelfBtn'));
+            showToast(save ? 'Tile order saved' : 'Reordering cancelled');
+        }
+        document.getElementById('reorderShelfBtn').addEventListener('click', function() {
+            shelfEdit = state.favorites.slice();
+            movingTileId = null;
+            this.hidden = true;
+            document.getElementById('shelfEditActions').hidden = false;
+            renderAppsShelf();
+            focusShelfTile(shelfEdit[0]);
+        });
+        document.getElementById('saveShelfOrder').addEventListener('click', function() { finishShelfEdit(true); });
+        document.getElementById('cancelShelfOrder').addEventListener('click', function() { finishShelfEdit(false); });
+        document.querySelectorAll('#shelfEditActions button, #reorderShelfBtn').forEach(function(button) {
+            button.addEventListener('mouseenter', function() { setMainFocus(button); });
+        });
+
+        // --- Focus & Spatial Navigation ---
+        let mainNavItems = [];
+        let curIndex = 0;
+        let modalOpen = false;
+        let modalNavItems = [];
+        let modalIndex = 0;
+
+        const heroTag = document.getElementById('heroTag');
+        const heroTitle = document.getElementById('heroTitle');
+        const heroDesc = document.getElementById('heroDesc');
+        const ambientGlow = document.getElementById('ambientGlow');
+
+        function refreshMainNavList() {
+            mainNavItems = Array.from(document.querySelectorAll(shelfEdit ? '.shelf-wrapper .nav-item' : '.nav-item')).filter(function(el) { return el.offsetParent !== null; });
+            if (mainNavItems.length > 0) {
+                curIndex = Math.min(curIndex, mainNavItems.length - 1);
+                // Default focus on first app tile if starting
+                const firstAppIdx = mainNavItems.findIndex(function(el) { return el.classList.contains('app-tile'); });
+                if (!document.querySelector('.nav-item.focused') && firstAppIdx !== -1) {
+                    curIndex = firstAppIdx;
+                }
+                setMainFocus(mainNavItems[curIndex]);
+            }
+        }
+
+        function setMainFocus(item) {
+            if (!item || (shelfEdit && !item.closest('.shelf-wrapper'))) return;
+            document.querySelectorAll('.nav-item.focused').forEach(function(i) { i.classList.remove('focused'); });
+            item.classList.add('focused');
+            item.focus({ preventScroll: true });
+            curIndex = mainNavItems.indexOf(item);
+
+            heroTag.textContent = item.dataset.tag || 'Selection';
+            heroTitle.textContent = item.dataset.title || '';
+            heroDesc.textContent = item.dataset.desc || '';
+
+            const color = item.dataset.color || '#0a84ff';
+            ambientGlow.style.background = 'radial-gradient(circle, ' + color + '35 0%, rgba(0,0,0,0) 70%)';
+        }
+
+        // Geometric (position-based) focus movement for Up/Down: finds the nearest
+        // nav-item strictly above/below the current one, weighted toward the same
+        // horizontal column. This replaces hand-tuned index arithmetic that broke
+        // every time a row was added/removed (header -> apps -> tabs -> picks).
+        function moveFocusVertical(dir) {
+            const current = mainNavItems[curIndex];
+            if (!current) return;
+            const cur = current.getBoundingClientRect();
+            const curX = cur.left + cur.width / 2;
+            const curY = cur.top + cur.height / 2;
+
+            const candidates = [];
+            mainNavItems.forEach(function(el, idx) {
+                if (idx === curIndex) return;
+                const r = el.getBoundingClientRect();
+                const x = r.left + r.width / 2;
+                const y = r.top + r.height / 2;
+                const dy = (y - curY) * dir;
+                // Threshold well above the focus hover-lift (tiles/cards shift up to ~6px on
+                // focus via translateY), otherwise that lift alone makes a same-row neighbor
+                // look like it's "below" and Down/Up never leaves the row.
+                if (dy <= 24) return; // must actually be in the requested direction, a full row away
+                candidates.push({ idx: idx, dy: dy, dx: Math.abs(x - curX) });
+            });
+            if (!candidates.length) return;
+
+            // Snap to the nearest row first (smallest dy), then pick whichever item in
+            // that row is best horizontally aligned. Scoring dy+dx together let a
+            // far-but-aligned row (e.g. a full-width picks grid) outscore a narrow row
+            // sitting right in between (e.g. the Movies/Shows tabs), which skipped it
+            // entirely - rows must win on distance first, alignment only breaks ties.
+            const minDy = Math.min.apply(null, candidates.map(function(c) { return c.dy; }));
+            const nearestRow = candidates.filter(function(c) { return c.dy <= minDy + 40; });
+            nearestRow.sort(function(a, b) { return a.dx - b.dx; });
+
+            curIndex = nearestRow[0].idx;
+            setMainFocus(mainNavItems[curIndex]);
+        }
+
+        // --- Customize Shelf & Settings Modal ---
+        const settingsModal = document.getElementById('settingsModal');
+        let tempFavorites = [];
+        let tempDevices = {};
+
+        function openSettingsModal() {
+            if (shelfEdit) return;
+            modalOpen = true;
+            tempFavorites = state.favorites.slice();
+            tempDevices = Object.assign({}, state.hdmiDevices);
+            renderHDMIOptions();
+            document.getElementById('cfgCity').value = state.city;
+            document.getElementById('cfgTheme').value = state.theme;
+            document.getElementById('cfgTmdbKey').value = state.tmdbKey;
+
+            renderAppSelectorGrid();
+            settingsModal.classList.add('active');
+            refreshModalNavList();
+        }
+
+        function renderHDMIOptions() {
+            const container = document.getElementById('hdmiOptions');
+            container.innerHTML = '';
+            state.catalog.filter(isHDMI).forEach(function(app) {
+                const button = document.createElement('button');
+                button.className = 'app-toggle-item modal-nav';
+                function updateLabel() {
+                    button.textContent = app.title + ': ' + (devicePreset(app, tempDevices).title || 'HDMI');
+                    button.setAttribute('aria-label', button.textContent + '. Press to change device');
+                }
+                updateLabel();
+                button.addEventListener('click', function() {
+                    const current = DEVICE_PRESETS.indexOf(devicePreset(app, tempDevices));
+                    tempDevices[app.id] = DEVICE_PRESETS[(current + 1) % DEVICE_PRESETS.length].key;
+                    updateLabel();
+                    refreshModalNavList();
+                    setModalFocus(button);
+                });
+                container.appendChild(button);
+            });
+        }
+
+        function closeSettingsModal() {
+            modalOpen = false;
+            settingsModal.classList.remove('active');
+            setMainFocus(mainNavItems[curIndex]);
+        }
+
+        function renderAppSelectorGrid() {
+            const container = document.getElementById('appSelectorGrid');
+            container.innerHTML = '';
+
+            state.catalog.forEach(function(app) {
+                const isSelected = tempFavorites.indexOf(app.id) !== -1;
+                const item = document.createElement('div');
+                item.className = 'app-toggle-item modal-nav' + (isSelected ? ' selected' : '');
+                // Installed app titles come from listLaunchPoints, so they are set as text.
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = app.title;
+                const markSpan = document.createElement('span');
+                markSpan.textContent = isSelected ? '✓' : '+';
+                item.appendChild(titleSpan);
+                item.appendChild(markSpan);
+
+                item.addEventListener('click', function() {
+                    const idx = tempFavorites.indexOf(app.id);
+                    if (idx !== -1) {
+                        if (tempFavorites.length > 1) tempFavorites.splice(idx, 1);
+                    } else if (tempFavorites.length < 8) {
+                        tempFavorites.push(app.id);
+                    } else {
+                        showToast('Max 8 apps on shelf');
+                    }
+                    renderAppSelectorGrid();
+                    refreshModalNavList();
+                });
+                container.appendChild(item);
+            });
+        }
+
+        function refreshModalNavList() {
+            modalNavItems = Array.from(settingsModal.querySelectorAll('.modal-nav:not(:disabled)'));
+            modalIndex = Math.min(modalIndex, modalNavItems.length - 1);
+            setModalFocus(modalNavItems[modalIndex]);
+        }
+
+        function setModalFocus(el) {
+            if (!el) return;
+            modalNavItems.forEach(function(i) { i.classList.remove('focused'); });
+            el.classList.add('focused');
+            el.focus();
+            modalIndex = modalNavItems.indexOf(el);
+        }
+
+        document.getElementById('customizeBtn').addEventListener('click', openSettingsModal);
+        document.getElementById('customizeBtn').addEventListener('mouseenter', function() {
+            setMainFocus(document.getElementById('customizeBtn'));
+        });
+        document.getElementById('weatherWidget').addEventListener('click', function() {
+            openDrawer();
+            fetchWeather();
+        });
+        document.getElementById('weatherWidget').addEventListener('mouseenter', function() {
+            setMainFocus(document.getElementById('weatherWidget'));
+        });
+
+        // --- Trending Tabs: Movies / Shows ---
+        function switchPicksTab(tab) {
+            if (state.picksTab === tab) return;
+            state.picksTab = tab;
+            document.getElementById('tabMovies').classList.toggle('active', tab === 'movies');
+            document.getElementById('tabShows').classList.toggle('active', tab === 'shows');
+            fetchTrendingPicks();
+        }
+        document.getElementById('tabMovies').addEventListener('click', function() { switchPicksTab('movies'); });
+        document.getElementById('tabShows').addEventListener('click', function() { switchPicksTab('shows'); });
+        document.getElementById('tabMovies').addEventListener('mouseenter', function() {
+            setMainFocus(document.getElementById('tabMovies'));
+        });
+        document.getElementById('tabShows').addEventListener('mouseenter', function() {
+            setMainFocus(document.getElementById('tabShows'));
+        });
+
+        // --- Weather & Sun Drawer ---
+        const weatherDrawer = document.getElementById('weatherDrawer');
+        const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+        let drawerOpen = false;
+
+        function renderDrawerForecast() {
+            document.getElementById('drawerIcon').textContent = document.getElementById('weatherIcon').textContent;
+            document.getElementById('drawerTemp').textContent = document.getElementById('weatherText').textContent;
+            document.getElementById('drawerCityLabel').textContent = document.getElementById('weatherSub').textContent;
+            document.getElementById('drawerSunrise').textContent = state.sunrise || '--:--';
+            document.getElementById('drawerSunset').textContent = state.sunset || '--:--';
+
+            const hourlyEl = document.getElementById('drawerHourly');
+            hourlyEl.innerHTML = '';
+            state.hourlyForecast.forEach(function(h) {
+                const wmo = WMO_CODES[h.code] || ['⛅', 'Fair'];
+                const chip = document.createElement('div');
+                chip.className = 'drawer-hour-chip';
+                chip.innerHTML =
+                    '<div class="drawer-hour-time">' + h.hour + '</div>' +
+                    '<div class="drawer-hour-icon">' + wmo[0] + '</div>' +
+                    '<div class="drawer-hour-temp">' + h.temp + '°</div>';
+                hourlyEl.appendChild(chip);
+            });
+        }
+
+        function openDrawer() {
+            if (shelfEdit) return;
+            drawerOpen = true;
+            weatherDrawer.classList.add('active');
+            closeDrawerBtn.classList.add('focused');
+            closeDrawerBtn.focus();
+        }
+
+        function closeDrawer() {
+            drawerOpen = false;
+            weatherDrawer.classList.remove('active');
+            closeDrawerBtn.classList.remove('focused');
+            setMainFocus(mainNavItems[curIndex]);
+        }
+
+        closeDrawerBtn.addEventListener('click', closeDrawer);
+
+        // --- OLED-Safe Idle Screensaver ---
+        const IDLE_TIMEOUT_MS = 3 * 60 * 1000;
+        const PIXEL_SHIFT_MS = 25 * 1000;
+        const screensaverOverlay = document.getElementById('screensaverOverlay');
+        const screensaverClockWrap = document.getElementById('screensaverClockWrap');
+        let screensaverOn = false;
+        let lastActivity = Date.now();
+        let pixelShiftTimer = null;
+
+        function shiftScreensaverClock() {
+            const maxX = Math.min(window.innerWidth * 0.28, 260);
+            const maxY = Math.min(window.innerHeight * 0.28, 160);
+            const x = Math.round((Math.random() - 0.5) * 2 * maxX);
+            const y = Math.round((Math.random() - 0.5) * 2 * maxY);
+            screensaverClockWrap.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+        }
+
+        function enterScreensaver() {
+            screensaverOn = true;
+            screensaverOverlay.classList.add('active');
+            shiftScreensaverClock();
+            pixelShiftTimer = setInterval(shiftScreensaverClock, PIXEL_SHIFT_MS);
+        }
+
+        function exitScreensaver() {
+            screensaverOn = false;
+            screensaverOverlay.classList.remove('active');
+            clearInterval(pixelShiftTimer);
+        }
+
+        function markActivity() {
+            lastActivity = Date.now();
+            if (screensaverOn) exitScreensaver();
+        }
+        document.addEventListener('mousemove', markActivity);
+        document.addEventListener('mousedown', markActivity);
+
+        setInterval(function() {
+            if (!screensaverOn && !modalOpen && !drawerOpen && Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
+                enterScreensaver();
+            }
+        }, 10000);
+
+        document.getElementById('closeModalBtn').addEventListener('click', closeSettingsModal);
+        document.getElementById('resetDefaultBtn').addEventListener('click', function() {
+            tempFavorites = DEFAULT_FAVORITES.slice();
+            tempDevices = {};
+            renderHDMIOptions();
+            document.getElementById('cfgCity').value = '';
+            document.getElementById('cfgTheme').value = 'auto';
+            document.getElementById('cfgTmdbKey').value = '';
+            renderAppSelectorGrid();
+            refreshModalNavList();
+            showToast('Defaults restored');
+        });
+
+        document.getElementById('saveModalBtn').addEventListener('click', function() {
+            state.favorites = tempFavorites.slice();
+            state.hdmiDevices = Object.assign({}, tempDevices);
+            localStorage.setItem('fmtv_hdmi_devices', JSON.stringify(state.hdmiDevices));
+            state.city = document.getElementById('cfgCity').value.trim();
+            state.theme = document.getElementById('cfgTheme').value;
+            state.tmdbKey = document.getElementById('cfgTmdbKey').value.trim();
+
+            localStorage.setItem('fmtv_favorites', JSON.stringify(state.favorites));
+            localStorage.setItem('fmtv_city', state.city);
+            localStorage.setItem('fmtv_theme', state.theme);
+            localStorage.setItem('fmtv_tmdb_key', state.tmdbKey);
+
+            renderAppsShelf();
+            applyTheme();
+            fetchWeather();
+            fetchTrendingPicks();
+            closeSettingsModal();
+            showToast('Saved & Applied!');
+        });
+
+        // --- Remote Control Key Handler ---
+        document.addEventListener('keydown', function(e) {
+            lastActivity = Date.now();
+            if (screensaverOn) {
+                exitScreensaver();
+                e.preventDefault();
+                return;
+            }
+
+            if (shelfEdit) {
+                if (e.keyCode === 461 || e.key === 'Escape' || e.key === 'GoBack') {
+                    finishShelfEdit(false); e.preventDefault(); return;
+                }
+                if (movingTileId) {
+                    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                        moveShelfTile(e.key === 'ArrowLeft' ? -1 : 1);
+                    } else if (e.key === 'Enter' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                        const id = movingTileId;
+                        movingTileId = null;
+                        renderAppsShelf();
+                        if (e.key === 'Enter') focusShelfTile(id);
+                        else setMainFocus(document.getElementById('saveShelfOrder'));
+                    } else return;
+                    e.preventDefault(); return;
+                }
+            }
+
+            // Back button on LG Magic Remote (461) or Escape
+            if (e.keyCode === 461 || e.key === 'Escape' || e.key === 'GoBack') {
+                if (modalOpen) {
+                    closeSettingsModal();
+                    e.preventDefault();
+                } else if (drawerOpen) {
+                    closeDrawer();
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            if (drawerOpen) {
+                if (e.key === 'Enter') {
+                    closeDrawer();
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            if (modalOpen) {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                    modalIndex = (modalIndex + 1) % modalNavItems.length;
+                    setModalFocus(modalNavItems[modalIndex]);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    modalIndex = (modalIndex - 1 + modalNavItems.length) % modalNavItems.length;
+                    setModalFocus(modalNavItems[modalIndex]);
+                    e.preventDefault();
+                } else if (e.key === 'Enter') {
+                    const active = modalNavItems[modalIndex];
+                    if (active && active.tagName !== 'INPUT' && active.tagName !== 'SELECT') {
+                        active.click();
+                        e.preventDefault();
+                    }
+                }
+                return;
+            }
+
+            // Main Dashboard Spatial Navigation
+            if (e.key === 'ArrowRight') {
+                curIndex = (curIndex + 1) % mainNavItems.length;
+                setMainFocus(mainNavItems[curIndex]);
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                curIndex = (curIndex - 1 + mainNavItems.length) % mainNavItems.length;
+                setMainFocus(mainNavItems[curIndex]);
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                moveFocusVertical(1);
+                e.preventDefault();
+            } else if (e.key === 'ArrowUp') {
+                moveFocusVertical(-1);
+                e.preventDefault();
+            } else if (e.key === 'Enter') {
+                if (mainNavItems[curIndex]) {
+                    mainNavItems[curIndex].click();
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // --- Boot Sequence ---
+        renderAppsShelf();
+        renderPicks(FALLBACK_MOVIES);
+        applyTheme();
+        fetchWeather();
+        fetchTrendingPicks();
+        discoverTVApps();
+        // Refresh weather & picks every 30 mins
+        setInterval(fetchWeather, 30 * 60 * 1000);
+        setInterval(fetchTrendingPicks, 60 * 60 * 1000);
+    </script>
+</body>
+</html>

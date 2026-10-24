@@ -1,0 +1,20 @@
+{
+  "id": "com.mizael.minhatv",
+  "version": "1.0.0",
+  "vendor": "Mizael",
+  "type": "web",
+  "main": "index.html",
+  "title": "Minha TV",
+  "icon": "assets/icon.png",
+  "largeIcon": "assets/largeIcon.png",
+  "splashBackground": "assets/splash.png",
+  "iconColor": "#000000",
+  "resolution": "1920x1080",
+  "handlesRelaunch": false,
+  "supportQuickStart": true,
+  "requiredPermissions": [
+    "applications",
+    "applications.launcher",
+    "system.notifications"
+  ]
+}
