@@ -162,31 +162,8 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
-        .weather-widget {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 15px;
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(14px);
-            padding: 7px 16px;
-            border-radius: 16px;
-            border: 1.5px solid var(--glass-border);
-            cursor: pointer;
-            will-change: transform;
-            transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.2s ease, border-color 0.2s ease;
-        }
-
-        .weather-widget:hover,
-        .weather-widget.focused {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: var(--glass-focus-border);
-            transform: scale(1.05);
-        }
-
         .weather-sub {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--text-secondary);
         }
 
@@ -209,42 +186,153 @@
             color: var(--text-secondary);
         }
 
-        /* Top Shelf Hero Details */
-        .hero-shelf {
-            height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            transition: all 0.3s ease;
+        /* Destaques: carrossel animado no topo */
+        .hero-carousel {
+            position: relative;
+            height: 330px;
+            border-radius: 28px;
+            overflow: hidden;
+            border: 1.5px solid var(--glass-border);
+            background: #05070c;
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .hero-tag {
+        .hero-carousel.focused {
+            border-color: var(--glass-focus-border);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 255, 255, 0.18);
+        }
+
+        .carousel-slide {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .carousel-slide.active { opacity: 1; }
+
+        .carousel-bg {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background-size: cover;
+            background-position: center top;
+            will-change: transform;
+        }
+
+        /* Slow zoom on the visible slide only (transform is compositor-only). */
+        .carousel-slide.active .carousel-bg { animation: carouselZoom 9s ease-out forwards; }
+        @keyframes carouselZoom {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
+        .carousel-shade {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(90deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0) 72%),
+                        linear-gradient(0deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 45%);
+        }
+
+        .carousel-content {
+            position: absolute;
+            left: 48px;
+            bottom: 40px;
+            max-width: 780px;
+            transform: translateY(16px);
+            transition: transform 1s ease;
+        }
+
+        .carousel-slide.active .carousel-content { transform: translateY(0); }
+
+        .carousel-service {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 8px;
             font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #fff;
+            margin-bottom: 14px;
+        }
+
+        .carousel-meta {
+            font-size: 15px;
             font-weight: 700;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent);
-            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 8px;
         }
 
-        .hero-title {
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            margin-bottom: 6px;
-            line-height: 1.1;
+        .carousel-title {
+            font-size: 46px;
+            font-weight: 800;
+            letter-spacing: -1.2px;
+            line-height: 1.05;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
         }
 
-        .hero-desc {
-            font-size: 16px;
-            font-weight: 400;
-            color: var(--text-secondary);
-            max-width: 820px;
-            line-height: 1.4;
+        .carousel-desc {
+            font-size: 18px;
+            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.82);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        .carousel-cta {
+            margin-top: 18px;
+            font-size: 15px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-carousel.focused .carousel-cta { opacity: 1; }
+
+        .carousel-dots {
+            position: absolute;
+            right: 40px;
+            bottom: 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.35);
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        .carousel-dot.active {
+            width: 34px;
+            background: #fff;
+        }
+
+        .carousel-source {
+            position: absolute;
+            right: 40px;
+            top: 28px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .carousel-status {
+            position: absolute;
+            left: 56px;
+            bottom: 52px;
+            font-size: 18px;
+            color: var(--text-secondary);
         }
 
         /* Glass App Shelf */
@@ -278,14 +366,12 @@
             color: var(--text-secondary);
         }
 
+        /* Flex (not grid) so a shelf with fewer than 8 apps stays centered;
+           each tile keeps the width of an 8-column slot. */
         .shelf-grid {
-            /* Flexbox fallback for engines without CSS Grid (e.g. webOS 3.x /
-               Chromium 38); the display: grid line below overrides it on any
-               engine that understands grid, since it comes later in the cascade. */
             display: flex;
             flex-wrap: wrap;
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
+            justify-content: center;
             gap: 18px;
         }
 
@@ -293,7 +379,7 @@
             background: rgba(255, 255, 255, 0.05);
             border: 1.5px solid rgba(255, 255, 255, 0.1);
             border-radius: 22px;
-            aspect-ratio: 1 / 1;
+            height: 150px;
             flex: 0 0 calc((100% - 18px * 7) / 8);
             display: flex;
             flex-direction: column;
@@ -339,6 +425,43 @@
             object-fit: contain;
         }
         .app-icon img.tile-brand-logo { width: 76%; height: 76%; }
+        .app-icon img.tile-photo { object-fit: cover; object-position: center 30%; }
+
+        /* Foto em tela cheia (bloco Tuti da prateleira). */
+        .photo-viewer {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 300;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+        .photo-viewer.active { opacity: 1; pointer-events: auto; }
+        .photo-viewer img {
+            max-width: 90%;
+            max-height: 82%;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+            transform: scale(0.94);
+            transition: transform 0.5s cubic-bezier(0.3, 1.2, 0.5, 1);
+        }
+        .photo-viewer.active img { transform: scale(1); }
+        .photo-viewer-caption {
+            margin-top: 22px;
+            font-size: 40px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+        }
+        .photo-viewer-hint {
+            margin-top: 6px;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
         .app-art-fallback {
             font-size: 25px;
             font-weight: 800;
@@ -359,6 +482,240 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        /* Clima e notícias, abaixo da prateleira */
+        .info-row {
+            display: flex;
+            gap: 20px;
+            height: 286px;
+        }
+
+        .info-panel {
+            background: var(--glass-shelf);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 16px 22px;
+            min-width: 0;
+        }
+
+        .info-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+        }
+
+        .info-hint {
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .weather-panel {
+            flex: 0 0 34%;
+            cursor: pointer;
+            outline: none;
+            transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .weather-panel.focused,
+        .weather-panel:hover {
+            border-color: var(--glass-focus-border);
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(1.02);
+        }
+
+        .weather-now {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 8px;
+        }
+
+        .weather-now-icon { font-size: 36px; }
+        .weather-now-text { font-size: 24px; font-weight: 600; }
+
+        .weather-hours {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .weather-hour {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .weather-hour div:nth-child(2) { font-size: 20px; margin: 2px 0; }
+        .weather-hour div:nth-child(3) { color: var(--text-primary); font-weight: 600; font-size: 15px; }
+
+        /* Memória da TV: faixa com as zonas ideais e um marcador que desliza até o valor atual. */
+        .perf-block {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .perf-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .perf-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .perf-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #30d158;
+            animation: perfPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes perfPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(0.7); }
+        }
+
+        .perf-value {
+            font-size: 22px;
+            font-weight: 700;
+            transition: color 0.6s ease;
+        }
+
+        .perf-bar {
+            position: relative;
+            display: flex;
+            height: 12px;
+            border-radius: 6px;
+            overflow: visible;
+        }
+
+        .perf-zone { height: 100%; opacity: 0.85; }
+        .perf-zone-ok { width: 75%; background: #30d158; border-radius: 6px 0 0 6px; }
+        .perf-zone-warn { width: 15%; background: #ffd60a; }
+        .perf-zone-high { width: 10%; background: #ff453a; border-radius: 0 6px 6px 0; }
+
+        .perf-marker {
+            position: absolute;
+            top: -5px;
+            left: 0;
+            width: 6px;
+            height: 22px;
+            margin-left: -3px;
+            border-radius: 3px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            transition: left 1.2s cubic-bezier(0.3, 1.2, 0.5, 1);
+        }
+
+        /* Labels sit at the start of their zone (0%, 75%) and the end of the bar. */
+        .perf-scale {
+            position: relative;
+            height: 14px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .perf-scale span { position: absolute; top: 0; white-space: nowrap; }
+        .perf-scale span:nth-child(1) { left: 0; }
+        .perf-scale span:nth-child(2) { left: 75%; }
+        .perf-scale span:nth-child(3) { right: 0; }
+
+        .perf-detail {
+            font-size: 13px;
+            margin-top: 6px;
+            color: var(--text-primary);
+        }
+
+        .news-panel { flex: 1; }
+
+        .news-grid {
+            display: flex;
+            gap: 16px;
+        }
+
+        .news-card {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 16px;
+            border: 1.5px solid transparent;
+            background: rgba(255, 255, 255, 0.04);
+            cursor: pointer;
+            outline: none;
+            transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .news-card.focused,
+        .news-card:hover {
+            border-color: var(--glass-focus-border);
+            background: rgba(255, 255, 255, 0.14);
+            transform: scale(1.03);
+        }
+
+        .news-thumb {
+            flex: 0 0 160px;
+            height: 112px;
+            border-radius: 10px;
+            background-color: #1a2030;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .news-text {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .news-source {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .news-title {
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .news-empty {
+            font-size: 15px;
+            color: var(--text-secondary);
+            padding-top: 30px;
+        }
+
         .hdmi-options {
             /* Flexbox fallback for engines without CSS Grid; display: grid
                below overrides it on any engine that understands grid. */
@@ -371,140 +728,6 @@
 
         .hdmi-options .app-toggle-item {
             flex: 0 0 calc((100% - 12px) / 2);
-        }
-
-        /* Trending Picks Row */
-        .picks-section {
-            margin-top: 6px;
-        }
-
-        .picks-top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .picks-header {
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-        }
-
-        .picks-source-badge {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .picks-tabs {
-            display: flex;
-            gap: 8px;
-        }
-
-        .picks-tab {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1.5px solid var(--glass-border);
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 6px 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            outline: none;
-            will-change: transform;
-            transition: transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
-        }
-
-        .picks-tab.active {
-            color: var(--text-primary);
-            background: rgba(10, 132, 255, 0.22);
-            border-color: #0a84ff;
-        }
-
-        .picks-tab:hover,
-        .picks-tab:focus,
-        .picks-tab.focused {
-            border-color: var(--glass-focus-border);
-            transform: scale(1.06);
-        }
-
-        .picks-grid {
-            /* Flexbox fallback for engines without CSS Grid; display: grid
-               below overrides it on any engine that understands grid. */
-            display: flex;
-            flex-wrap: wrap;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        .pick-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1.5px solid var(--glass-border);
-            border-radius: 18px;
-            height: 128px;
-            flex: 0 0 calc((100% - 20px * 3) / 4);
-            display: flex;
-            overflow: hidden;
-            cursor: pointer;
-            outline: none;
-            will-change: transform;
-            transition: transform 0.26s cubic-bezier(0.3, 1.4, 0.5, 1), border-color 0.2s ease, background 0.2s ease;
-            transform: translateZ(0);
-            position: relative;
-        }
-
-        .pick-card:hover,
-        .pick-card:focus,
-        .pick-card.focused {
-            transform: scale(1.04) translateY(-4px) translateZ(0);
-            border-color: var(--glass-focus-border);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.2);
-            background: rgba(255, 255, 255, 0.14);
-        }
-
-        .pick-poster {
-            width: 92px;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
-            background-color: #1a2030;
-        }
-
-        .pick-meta {
-            padding: 12px 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 4px;
-            overflow: hidden;
-        }
-
-        .pick-badge {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent);
-        }
-
-        .pick-title {
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: -0.3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .pick-service {
-            font-size: 12px;
-            color: var(--text-secondary);
         }
 
         /* Modal Overlay (Settings & Customize Shelf) */
@@ -875,13 +1098,6 @@
                 <button class="header-btn nav-item" id="customizeBtn" data-tag="Personalizar" data-title="Prateleira e Configurações" data-desc="Escolha quais apps instalados aparecem na prateleira, a cidade do clima e a chave do TMDB.">
                     <span>⚙️ Personalizar</span>
                 </button>
-                <div class="weather-widget nav-item" id="weatherWidget" data-tag="Previsão ao vivo" data-title="Clima e Pôr do Sol" data-desc="Temperatura e condição do céu em tempo real, via Open-Meteo.">
-                    <span id="weatherIcon">☀️</span>
-                    <div>
-                        <div id="weatherText">Carregando...</div>
-                        <div class="weather-sub" id="weatherSub">Detectando local</div>
-                    </div>
-                </div>
                 <div class="clock-group">
                     <div class="date" id="dateText">seg, 19 out</div>
                     <div class="clock" id="clockText">20:30</div>
@@ -889,11 +1105,11 @@
             </div>
         </header>
 
-        <!-- Top Shelf (Hero Preview) -->
-        <div class="hero-shelf">
-            <div class="hero-tag" id="heroTag">Início</div>
-            <div class="hero-title" id="heroTitle">Tela inicial limpa, sem anúncios</div>
-            <div class="hero-desc" id="heroDesc">Navegue com as setas ou o ponteiro do Magic Remote. Abra seus apps na hora, sem propaganda.</div>
+        <!-- Destaques: carrossel com até 5 títulos dos seus serviços -->
+        <div class="hero-carousel nav-item" id="heroCarousel" role="button" aria-roledescription="carrossel" aria-label="Destaques">
+            <div class="carousel-status" id="carouselStatus">Carregando destaques…</div>
+            <div class="carousel-source" id="carouselSource"></div>
+            <div class="carousel-dots" id="carouselDots"></div>
         </div>
 
         <!-- Glass Shelf: Apps -->
@@ -910,18 +1126,45 @@
             <div class="shelf-grid" id="appsGrid"></div>
         </div>
 
-        <!-- Trending Picks Row -->
-        <div class="picks-section">
-            <div class="picks-top-bar">
-                <div class="picks-header">Em Alta Esta Semana</div>
-                <div class="picks-tabs">
-                    <button class="picks-tab nav-item active" id="tabMovies" data-tag="Em alta" data-title="Filmes" data-desc="Mostra os filmes em alta da semana.">Filmes</button>
-                    <button class="picks-tab nav-item" id="tabShows" data-tag="Em alta" data-title="Séries" data-desc="Mostra as séries em alta da semana.">Séries</button>
+        <!-- Clima e principais notícias -->
+        <div class="info-row">
+            <div class="info-panel weather-panel nav-item" id="weatherWidget" role="button" aria-label="Previsão do tempo">
+                <div class="info-header">Clima</div>
+                <div class="weather-now">
+                    <span class="weather-now-icon" id="weatherIcon">☀️</span>
+                    <div>
+                        <div class="weather-now-text" id="weatherText">Carregando...</div>
+                        <div class="weather-sub" id="weatherSub">Detectando local</div>
+                    </div>
                 </div>
-                <div class="picks-source-badge" id="picksSourceBadge">Ao vivo</div>
+                <div class="weather-hours" id="weatherHours"></div>
+                <div class="perf-block">
+                    <div class="perf-head">
+                        <span class="perf-title"><span class="perf-pulse" id="perfPulse"></span>Memória da TV</span>
+                        <span class="perf-value" id="perfValue">--%</span>
+                    </div>
+                    <div class="perf-bar">
+                        <div class="perf-zone perf-zone-ok"></div>
+                        <div class="perf-zone perf-zone-warn"></div>
+                        <div class="perf-zone perf-zone-high"></div>
+                        <div class="perf-marker" id="perfMarker"></div>
+                    </div>
+                    <div class="perf-scale"><span>Ideal até 75%</span><span>Moderado</span><span>Alto 90%+</span></div>
+                    <div class="perf-detail" id="perfDetail">Lendo memória…</div>
+                </div>
             </div>
-            <div class="picks-grid" id="picksGrid"></div>
+            <div class="info-panel news-panel">
+                <div class="info-header">Principais notícias <span class="info-hint" id="newsHint"></span></div>
+                <div class="news-grid" id="newsGrid"></div>
+            </div>
         </div>
+
+    </div>
+
+    <div class="photo-viewer" id="photoViewer" role="dialog" aria-label="Foto">
+        <img id="photoViewerImg" alt="">
+        <div class="photo-viewer-caption" id="photoViewerCaption"></div>
+        <div class="photo-viewer-hint">OK ou Voltar para fechar</div>
     </div>
 
     <!-- Customize Shelf & Settings Modal -->
@@ -1045,6 +1288,8 @@
             { id: 'com.crunchyroll.webapp', title: 'Crunchyroll', tag: 'Anime', desc: 'O maior catálogo de animes.', color: '#f47521', badge: 'CR', bg: 'linear-gradient(135deg, #f47521, #c4570d)' },
             { id: 'com.webos.app.browser', title: 'Navegador', tag: 'Internet', desc: 'Navegador de internet da TV.', color: '#5856d6', badge: 'WEB', bg: 'linear-gradient(135deg, #5856d6, #3634a3)' },
             { id: 'com.webos.app.mediadiscovery', title: 'Mídia USB', tag: 'Mídia local', desc: 'Fotos, vídeos e músicas de pendrive ou servidor DLNA.', color: '#7e56b1', badge: 'USB', bg: 'linear-gradient(135deg, #7e56b1, #4f3278)' },
+            // Bloco de foto (não é um app): OK mostra a foto em tela cheia.
+            { id: 'minhatv.tuti', title: 'Tuti', tag: 'Família', desc: 'Foto do Tuti.', color: '#7fb3d5', badge: 'Tuti', bg: '#dfe9f2', iconUrl: 'assets/tuti-tile.jpg', photo: 'assets/tuti.jpg' },
             { id: 'org.webosbrew.hbchannel', title: 'Homebrew', tag: 'Sistema', desc: 'Loja Homebrew Channel e ajustes do sistema.', color: '#cf0652', badge: 'HB', bg: 'linear-gradient(135deg, #cf0652, #8b0034)' }
         ];
 
@@ -1112,40 +1357,132 @@
             'com.disney.disneyplus-prod',
             'globoplaywebos',
             'com.hbo.hbomax',
-            'netflix'
+            'netflix',
+            'minhatv.tuti'
         ];
 
-        var FALLBACK_MOVIES = [
-            { title: 'Duna: Parte Dois', badge: 'Ficção • 8,5★', service: 'Assistir no HBO Max', app: 'com.hbo.hbomax', desc: 'Paul Atreides se une a Chani e aos Fremen em busca de vingança contra quem destruiu sua família.', poster: '', color: '#5822b4' },
-            { title: 'Ainda Estou Aqui', badge: 'Drama • 8,0★', service: 'Assistir no Globoplay', app: 'globoplaywebos', desc: 'Eunice Paiva reconstrói a vida da família após o desaparecimento do marido durante a ditadura.', poster: '', color: '#fb003f' },
-            { title: 'Oppenheimer', badge: 'Drama • 8,3★', service: 'Assistir no Prime Video', app: 'amazon', desc: 'A história do físico J. Robert Oppenheimer e do desenvolvimento da bomba atômica.', poster: '', color: '#00a8e1' },
-            { title: 'Divertida Mente 2', badge: 'Animação • 7,6★', service: 'Assistir no Disney+', app: 'com.disney.disneyplus-prod', desc: 'Riley entra na adolescência e novas emoções chegam à sala de controle.', poster: '', color: '#113ccf' }
+        // Serviços do catálogo: cada um aponta para o app da prateleira (o objeto,
+        // não o ID, porque discoverTVApps pode trocar o ID pelo real da TV) e para
+        // o provedor equivalente no TMDB (watch_region=BR).
+        function catalogApp(id) { return arrFind(DEFAULT_CATALOG, function(c) { return c.id === id; }); }
+        var STREAMING_SERVICES = [
+            // Netflix aceita abrir direto no título; o ID vem do Wikidata (propriedade P1874).
+            { key: 'netflix', app: catalogApp('netflix'), provider: '8', badge: 'NETFLIX', wikidataProp: 'P1874', idPattern: /^\d+$/,
+              deepLink: function(id) { return { contentTarget: 'm=https://api-global.netflix.com/catalog/titles/movies/' + id + '&source_type=4' }; } },
+            { key: 'prime', app: catalogApp('amazon'), provider: '119', badge: 'PRIME' },
+            { key: 'disney', app: catalogApp('com.disney.disneyplus-prod'), provider: '337', badge: 'DISNEY+' },
+            { key: 'globoplay', app: catalogApp('globoplaywebos'), provider: '307', badge: 'GLOBOPLAY' },
+            { key: 'hbomax', app: catalogApp('com.hbo.hbomax'), provider: '1899', badge: 'HBO MAX' }
         ];
 
-        var FALLBACK_SHOWS = [
-            { title: 'Stranger Things', badge: 'Ficção • 8,6★', service: 'Assistir na Netflix', app: 'netflix', desc: 'Um grupo de amigos enfrenta mistérios sobrenaturais na cidade de Hawkins.', poster: '', color: '#e50914' },
-            { title: 'The Last of Us', badge: 'Drama • 8,7★', service: 'Assistir no HBO Max', app: 'com.hbo.hbomax', desc: 'Joel e Ellie atravessam um país devastado por uma infecção em busca de esperança.', poster: '', color: '#5822b4' },
-            { title: 'The Boys', badge: 'Ação • 8,7★', service: 'Assistir no Prime Video', app: 'amazon', desc: 'Um grupo de justiceiros enfrenta super-heróis corruptos e poderosos.', poster: '', color: '#00a8e1' },
-            { title: 'Andor', badge: 'Ficção • 8,5★', service: 'Assistir no Disney+', app: 'com.disney.disneyplus-prod', desc: 'A origem do rebelde Cassian Andor no universo Star Wars.', poster: '', color: '#113ccf' }
-        ];
+        // Seleção offline (sem internet ou sem chave TMDB): só produções próprias
+        // de cada serviço, que não saem do catálogo com o tempo.
+        var CURATED_CATALOG = {
+            netflix: {
+                movies: [
+                    ['Guerreiras do K-Pop', 'Animação', 'Um trio de estrelas do K-pop leva uma vida dupla caçando demônios.'],
+                    ['Alerta Vermelho', 'Ação', 'Um agente do FBI se une ao maior ladrão de arte do mundo para pegar uma rival.'],
+                    ['Agente Oculto', 'Ação', 'Um agente da CIA vira alvo depois de descobrir segredos da própria agência.'],
+                    ['Não Olhe para Cima', 'Comédia', 'Dois astrônomos tentam avisar o mundo sobre um cometa que vai destruir a Terra.']
+                ],
+                shows: [
+                    ['Stranger Things', 'Ficção', 'Um grupo de amigos enfrenta mistérios sobrenaturais na cidade de Hawkins.'],
+                    ['Round 6', 'Suspense', 'Pessoas endividadas disputam jogos infantis mortais por um prêmio bilionário.'],
+                    ['Wandinha', 'Comédia', 'Wandinha Addams investiga uma onda de crimes na Escola Nunca Mais.'],
+                    ['Sintonia', 'Drama', 'Três amigos da periferia de São Paulo seguem caminhos diferentes: funk, tráfico e igreja.']
+                ]
+            },
+            prime: {
+                movies: [
+                    ['A Guerra do Amanhã', 'Ficção', 'Soldados do presente são enviados ao futuro para lutar contra alienígenas.'],
+                    ['Saltburn', 'Suspense', 'Um estudante de Oxford passa o verão na mansão da família de um colega rico.'],
+                    ['Vermelho, Branco e Sangue Azul', 'Romance', 'O filho da presidente dos EUA se apaixona por um príncipe britânico.']
+                ],
+                shows: [
+                    ['The Boys', 'Ação', 'Um grupo de justiceiros enfrenta super-heróis corruptos e poderosos.'],
+                    ['Reacher', 'Ação', 'Um ex-policial militar investiga crimes por onde passa.'],
+                    ['Invencível', 'Animação', 'O filho do maior super-herói do planeta descobre os próprios poderes.'],
+                    ['Os Anéis de Poder', 'Fantasia', 'A Segunda Era da Terra-média, milhares de anos antes de O Senhor dos Anéis.']
+                ]
+            },
+            disney: {
+                movies: [
+                    ['Divertida Mente 2', 'Animação', 'Riley entra na adolescência e novas emoções chegam à sala de controle.'],
+                    ['Moana 2', 'Animação', 'Moana parte para os mares distantes da Oceania atrás de um chamado ancestral.'],
+                    ['Deadpool & Wolverine', 'Ação', 'Deadpool convoca um Wolverine relutante para salvar o seu universo.'],
+                    ['Elementos', 'Animação', 'Numa cidade de fogo, água, terra e ar, uma jovem de fogo conhece um rapaz de água.']
+                ],
+                shows: [
+                    ['Andor', 'Ficção', 'A origem do rebelde Cassian Andor no universo Star Wars.'],
+                    ['Xógum', 'Drama', 'Japão feudal, 1600: um senhor de guerra luta pela própria vida contra rivais.'],
+                    ['O Urso', 'Drama', 'Um chef premiado volta para casa para tocar a lanchonete da família.'],
+                    ['The Mandalorian', 'Ficção', 'Um caçador de recompensas protege uma criança misteriosa pela galáxia.']
+                ]
+            },
+            globoplay: {
+                movies: [
+                    ['Ainda Estou Aqui', 'Drama', 'Eunice Paiva reconstrói a vida da família após o desaparecimento do marido durante a ditadura.']
+                ],
+                shows: [
+                    ['Vale Tudo', 'Novela', 'Mãe e filha seguem caminhos opostos numa disputa sobre honestidade e ambição.'],
+                    ['Os Outros', 'Suspense', 'Uma briga entre vizinhos de condomínio sai do controle e vira uma guerra.'],
+                    ['Arcanjo Renegado', 'Ação', 'Um sargento do BOPE é transferido depois de uma operação que dá errado.'],
+                    ['Verdades Secretas', 'Drama', 'Uma jovem modelo entra num mundo de luxo, segredos e prostituição de alto padrão.']
+                ]
+            },
+            hbomax: {
+                movies: [
+                    ['Duna: Parte Dois', 'Ficção', 'Paul Atreides se une a Chani e aos Fremen em busca de vingança.'],
+                    ['Superman', 'Ação', 'Clark Kent tenta conciliar a herança kryptoniana com a família humana.'],
+                    ['Pecadores', 'Terror', 'Dois irmãos voltam à cidade natal e encontram um mal ainda maior.'],
+                    ['Barbie', 'Comédia', 'Barbie deixa a Barbielândia e descobre o mundo real.']
+                ],
+                shows: [
+                    ['The Last of Us', 'Drama', 'Joel e Ellie atravessam um país devastado por uma infecção.'],
+                    ['A Casa do Dragão', 'Fantasia', 'A guerra civil Targaryen, 200 anos antes de Game of Thrones.'],
+                    ['The White Lotus', 'Comédia', 'Hóspedes e funcionários de um resort de luxo ao longo de uma semana.'],
+                    ['The Pitt', 'Drama', 'Um plantão inteiro no pronto-socorro de um hospital de Pittsburgh.']
+                ]
+            }
+        };
+
+        // O instalador (scripts/install.py) pode entregar a chave TMDB nos parâmetros
+        // de abertura, para ela nunca ficar no código nem no pacote publicado.
+        try {
+            var launchParams = JSON.parse((window.PalmSystem && window.PalmSystem.launchParams) || '{}');
+            if (launchParams && typeof launchParams.tmdbKey === 'string' && launchParams.tmdbKey.trim()) {
+                localStorage.setItem('fmtv_tmdb_key', launchParams.tmdbKey.trim());
+            }
+        } catch (e) {}
+
+        var DEFAULT_CITY = 'Cidade Ocidental';
 
         // --- Persistent State ---
         var state = {
             favorites: JSON.parse(localStorage.getItem('fmtv_favorites') || 'null') || DEFAULT_FAVORITES.slice(),
             hdmiDevices: readDeviceChoices(),
-            city: localStorage.getItem('fmtv_city') || '',
+            city: localStorage.getItem('fmtv_city') || DEFAULT_CITY,
             lat: parseFloat(localStorage.getItem('fmtv_lat') || '0'),
             lon: parseFloat(localStorage.getItem('fmtv_lon') || '0'),
             theme: localStorage.getItem('fmtv_theme') || 'oled',
             tmdbKey: localStorage.getItem('fmtv_tmdb_key') || '',
             catalog: DEFAULT_CATALOG.slice(),
-            picksTab: 'movies',
             hourlyForecast: [],
             sunrise: '',
             sunset: '',
             isSunset: false,
             isNight: true
         };
+
+        // Quem já tinha uma prateleira salva ganha o bloco do Tuti uma vez, logo depois da Netflix.
+        try {
+            if (state.favorites.indexOf('minhatv.tuti') === -1 && !localStorage.getItem('fmtv_tuti_added') && state.favorites.length < 8) {
+                var netflixAt = state.favorites.indexOf('netflix');
+                state.favorites.splice(netflixAt === -1 ? state.favorites.length : netflixAt + 1, 0, 'minhatv.tuti');
+                localStorage.setItem('fmtv_favorites', JSON.stringify(state.favorites));
+            }
+            localStorage.setItem('fmtv_tuti_added', '1');
+        } catch (e) {}
 
         // --- Clock & Date ---
         function pad2(n) {
@@ -1294,7 +1631,7 @@
 
                     var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
                         '&current=temperature_2m,weather_code,is_day' +
-                        '&hourly=temperature_2m,weather_code' +
+                        '&hourly=temperature_2m,weather_code,is_day' +
                         '&daily=sunrise,sunset&timezone=auto&forecast_days=2';
                     return fetch(url).then(function(res) { return res.json(); });
                 })
@@ -1343,12 +1680,14 @@
                             return {
                                 hour: t.split('T')[1].slice(0, 5),
                                 temp: Math.round(data.hourly.temperature_2m[idx]),
-                                code: data.hourly.weather_code[idx]
+                                code: data.hourly.weather_code[idx],
+                                isDay: !data.hourly.is_day || data.hourly.is_day[idx] === 1
                             };
                         });
                     }
 
                     renderDrawerForecast();
+                    renderWeatherHours();
                 })
                 .catch(function(err) {
                     document.getElementById('weatherText').textContent = '22°C • Céu limpo';
@@ -1356,105 +1695,393 @@
                 });
         }
 
-        // --- Live Trending Picks (TMDB + Live TVMaze Zero-Key Feed), split by Movies/Shows tab ---
-        function fetchTrendingPicks() {
-            var badge = document.getElementById('picksSourceBadge');
-            var tab = state.picksTab;
-            var tmdbMediaPath = tab === 'shows' ? 'tv' : 'movie';
+        // --- Destaques (TMDB watch providers, região BR) ---
+        // 7 lançamentos bem avaliados (sempre 4 filmes e 3 séries), sorteados entre os serviços da prateleira.
+        // O sorteio fica salvo e só é refeito a cada 3 dias (ou se os serviços mudarem).
+        var CAROUSEL_QUOTA = { movie: 4, tv: 3 };
+        var CAROUSEL_VERSION = 3; // muda quando o formato do sorteio salvo muda
+        var CAROUSEL_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+        var CAROUSEL_SLIDE_MS = 8000;
+        var CAROUSEL_STORE = 'fmtv_carousel';
+        var carousel = { items: [], index: 0, timer: null };
 
-            function showCurated() {
-                if (tab !== state.picksTab) return;
-                badge.textContent = 'Seleção';
-                renderPicks(tab === 'shows' ? FALLBACK_SHOWS : FALLBACK_MOVIES);
+        // Serviços com catálogo, na ordem da prateleira; se nenhum estiver lá, todos.
+        function catalogServices() {
+            var onShelf = state.favorites
+                .map(function(id) { return arrFind(STREAMING_SERVICES, function(s) { return s.app.id === id; }); })
+                .filter(Boolean);
+            return onShelf.length ? onShelf : STREAMING_SERVICES.slice();
+        }
+
+        function serviceByKey(key) { return arrFind(STREAMING_SERVICES, function(s) { return s.key === key; }); }
+
+        function shuffle(list) {
+            var copy = list.slice();
+            for (var i = copy.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = copy[i]; copy[i] = copy[j]; copy[j] = tmp;
             }
+            return copy;
+        }
 
-            if (typeof fetch !== 'function') {
-                showCurated();
+        function tmdbGet(path) {
+            var key = state.tmdbKey.trim();
+            var bearer = key.length > 40;
+            var url = 'https://api.themoviedb.org/3' + path + (bearer ? '' : '&api_key=' + encodeURIComponent(key));
+            return fetch(url, { headers: bearer ? { 'Authorization': 'Bearer ' + key } : {} })
+                .then(function(res) {
+                    if (!res.ok) throw new Error('TMDB ' + res.status);
+                    return res.json();
+                });
+        }
+
+        // Lançamentos dos últimos 12 meses com nota 6,5+, os 10 mais populares de filmes e de séries.
+        function fetchServicePool(service) {
+            var since = new Date();
+            since.setFullYear(since.getFullYear() - 1);
+            since = since.toISOString().slice(0, 10);
+            return Promise.all(['movie', 'tv'].map(function(media) {
+                var dateField = media === 'tv' ? 'first_air_date' : 'primary_release_date';
+                return tmdbGet('/discover/' + media + '?language=pt-BR&watch_region=BR&with_watch_monetization_types=flatrate' +
+                        '&with_watch_providers=' + encodeURIComponent(service.provider) + '&sort_by=popularity.desc' +
+                        '&vote_count.gte=20&vote_average.gte=6.5&' + dateField + '.gte=' + since)
+                    .then(function(data) {
+                        return (data.results || []).filter(function(item) {
+                            return item.backdrop_path && item.overview && (item.title || item.name);
+                        }).slice(0, 10).map(function(item) {
+                            var date = item.release_date || item.first_air_date || '';
+                            return {
+                                title: item.title || item.name,
+                                info: [media === 'tv' ? 'Série' : 'Filme', date.slice(0, 4), item.vote_average.toFixed(1).replace('.', ',') + '★'].filter(Boolean).join(' • '),
+                                desc: item.overview,
+                                backdrop: 'https://image.tmdb.org/t/p/w1280' + item.backdrop_path,
+                                score: item.vote_average,
+                                kind: media,
+                                tmdbId: item.id,
+                                service: service.key
+                            };
+                        });
+                    })
+                    .catch(function() { return []; });
+            })).then(function(lists) {
+                // Prefere os mais bem avaliados (7+) quando o serviço tem opções suficientes, separado
+                // por filmes e séries para um não esvaziar o outro.
+                return [].concat.apply([], lists.map(function(list) {
+                    var best = list.filter(function(item) { return item.score >= 7; });
+                    return best.length >= 3 ? best : list;
+                }));
+            });
+        }
+
+        // Para cada tipo (filme/série): um título por serviço primeiro (para variar), depois
+        // completa a cota com sorteio. Filmes e séries saem intercalados.
+        function pickCarousel(pools) {
+            var seen = {};
+            var byKind = {};
+            Object.keys(CAROUSEL_QUOTA).forEach(function(kind) {
+                var quota = CAROUSEL_QUOTA[kind];
+                var picked = [];
+                function take(item) {
+                    if (!item || seen[item.title] || picked.length >= quota) return;
+                    seen[item.title] = true;
+                    picked.push(item);
+                }
+                var kindPools = pools.map(function(pool) {
+                    return shuffle(pool.filter(function(item) { return item.kind === kind; }));
+                });
+                shuffle(kindPools).forEach(function(pool) { take(pool[0]); });
+                shuffle([].concat.apply([], kindPools)).forEach(take);
+                byKind[kind] = picked;
+            });
+            var out = [];
+            for (var i = 0; byKind.movie[i] || byKind.tv[i]; i++) {
+                if (byKind.movie[i]) out.push(byKind.movie[i]);
+                if (byKind.tv[i]) out.push(byKind.tv[i]);
+            }
+            return out;
+        }
+
+        // Busca o ID do título dentro do serviço (TMDB → Wikidata) para abrir direto nele.
+        function addServiceId(item) {
+            var service = serviceByKey(item.service);
+            if (!service || !service.wikidataProp || !item.tmdbId) return Promise.resolve(item);
+            return tmdbGet('/' + item.kind + '/' + item.tmdbId + '/external_ids?language=pt-BR')
+                .then(function(ids) {
+                    if (!ids.wikidata_id || !/^Q\d+$/.test(ids.wikidata_id)) return null;
+                    return fetch('https://www.wikidata.org/w/api.php?action=wbgetclaims&format=json&origin=*&entity=' +
+                        ids.wikidata_id + '&property=' + service.wikidataProp).then(function(res) { return res.json(); });
+                })
+                .then(function(data) {
+                    var claim = data && data.claims && data.claims[service.wikidataProp] && data.claims[service.wikidataProp][0];
+                    var value = claim && claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value;
+                    if (typeof value === 'string' && service.idPattern.test(value)) item.serviceId = value;
+                    return item;
+                })
+                .catch(function() { return item; });
+        }
+
+        function curatedCarousel(services) {
+            return pickCarousel(services.map(function(service) {
+                var curated = CURATED_CATALOG[service.key];
+                return curated.movies.map(function(row) { return [row, 'movie']; })
+                    .concat(curated.shows.map(function(row) { return [row, 'tv']; }))
+                    .map(function(entry) {
+                        var label = entry[1] === 'tv' ? 'Série' : 'Filme';
+                        return { title: entry[0][0], info: label + ' • ' + entry[0][1], desc: entry[0][2], backdrop: '', service: service.key, kind: entry[1] };
+                    });
+            }));
+        }
+
+        function readCarouselStore() {
+            try { return JSON.parse(localStorage.getItem(CAROUSEL_STORE) || 'null'); } catch (e) { return null; }
+        }
+
+        function loadCarousel() {
+            var services = catalogServices();
+            var signature = CAROUSEL_VERSION + '|' + services.map(function(s) { return s.key; }).join(',') + '|' + state.tmdbKey.trim();
+            var saved = readCarouselStore();
+            var fresh = saved && saved.signature === signature && Date.now() - saved.at < CAROUSEL_TTL_MS &&
+                Array.isArray(saved.items) && saved.items.length;
+            if (fresh) {
+                if (carousel.savedAt !== saved.at) renderCarousel(saved.items, saved.at);
                 return;
             }
-
-            // 1. If user provided a TMDB API Key, fetch live from TMDB for the active tab
-            var tmdbPromise;
-            if (state.tmdbKey && state.tmdbKey.trim().length > 8) {
-                var key = state.tmdbKey.trim();
-                var headers = key.length > 40 ? { 'Authorization': 'Bearer ' + key } : {};
-                var url = key.length > 40
-                    ? 'https://api.themoviedb.org/3/trending/' + tmdbMediaPath + '/week?language=pt-BR'
-                    : 'https://api.themoviedb.org/3/trending/' + tmdbMediaPath + '/week?language=pt-BR&api_key=' + encodeURIComponent(key);
-
-                tmdbPromise = fetch(url, { headers: headers })
-                    .then(function(res) { return res.json(); })
-                    .then(function(data) {
-                        if (data.results && data.results.length >= 4 && tab === state.picksTab) {
-                            var items = data.results.slice(0, 4).map(function(item) {
-                                var title = item.title || item.name || 'Em alta';
-                                var score = item.vote_average ? item.vote_average.toFixed(1).replace('.', ',') + '★' : 'Em alta';
-                                return {
-                                    title: title,
-                                    badge: (tab === 'shows' ? 'Série' : 'Filme') + ' • ' + score,
-                                    service: 'Em alta no TMDB',
-                                    app: 'netflix',
-                                    desc: item.overview || 'Em alta no mundo esta semana.',
-                                    poster: item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.poster_path : '',
-                                    color: '#0a84ff'
-                                };
-                            });
-                            badge.textContent = 'TMDB ao vivo';
-                            renderPicks(items);
-                            return true;
-                        }
-                        return false;
-                    })
-                    .catch(function() { return false; });
-            } else {
-                tmdbPromise = Promise.resolve(false);
+            if (typeof fetch !== 'function' || state.tmdbKey.trim().length <= 8) {
+                renderCarousel(curatedCarousel(services), 0);
+                return;
             }
+            Promise.all(services.map(fetchServicePool)).then(function(pools) {
+                var items = pickCarousel(pools);
+                if (!items.length) { renderCarousel(curatedCarousel(services), 0); return; }
+                return Promise.all(items.map(addServiceId));
+            }).then(function(items) {
+                if (!items) return;
+                var record = { at: Date.now(), signature: signature, items: items };
+                try { localStorage.setItem(CAROUSEL_STORE, JSON.stringify(record)); } catch (e) {}
+                renderCarousel(items, record.at);
+            });
+        }
 
-            tmdbPromise
-                .then(function(handled) {
-                    if (handled) return true;
+        function renderWeatherHours() {
+            var container = document.getElementById('weatherHours');
+            container.innerHTML = '';
+            state.hourlyForecast.forEach(function(h) {
+                var wmo = WMO_CODES[h.code] || ['⛅', 'Tempo bom'];
+                // Céu limpo ou poucas nuvens à noite vira lua, como no clima atual.
+                var icon = !h.isDay && h.code <= 1 ? '🌙' : wmo[0];
+                var chip = document.createElement('div');
+                chip.className = 'weather-hour';
+                [h.hour, icon, h.temp + '°'].forEach(function(text) {
+                    var el = document.createElement('div');
+                    el.textContent = text;
+                    chip.appendChild(el);
+                });
+                container.appendChild(chip);
+            });
+        }
 
-                    // 2. Zero-Key Live Fallback: TVMaze only has TV data, so it covers the Shows tab;
-                    //    the Movies tab falls through to the curated list below without a TMDB key.
-                    if (tab === 'shows') {
-                        return fetch('https://api.tvmaze.com/shows?page=0')
-                            .then(function(res) { return res.json(); })
-                            .then(function(shows) {
-                                if (Array.isArray(shows) && shows.length > 0 && tab === state.picksTab) {
-                                    var topShows = shows
-                                        .filter(function(s) { return s.rating && s.rating.average >= 8.4 && s.image && s.image.medium; })
-                                        .sort(function() { return 0.5 - Math.random(); })
-                                        .slice(0, 4)
-                                        .map(function(s) {
-                                            var cleanSummary = (s.summary || '').replace(/<[^>]*>/g, '');
-                                            var genre = (s.genres && s.genres[0]) || 'Série';
-                                            var network = (s.network && s.network.name) || (s.webChannel && s.webChannel.name) || 'Streaming';
-                                            return {
-                                                title: s.name,
-                                                badge: genre + ' • ' + s.rating.average + '★',
-                                                service: 'Assistir em ' + network,
-                                                app: 'netflix',
-                                                desc: cleanSummary || 'Série aclamada pela crítica.',
-                                                poster: s.image.medium,
-                                                color: '#0a84ff'
-                                            };
-                                        });
-                                    if (topShows.length === 4) {
-                                        badge.textContent = 'Populares ao vivo';
-                                        renderPicks(topShows);
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            })
-                            .catch(function() { return false; });
-                    }
-                    return false;
+        // --- Memória da TV ---
+        // Tenta o serviço de memória do webOS (o app pode ter acesso mesmo quando o terminal não tem)
+        // e, se não der, /proc/meminfo. O motivo da falha aparece no quadro para diagnóstico.
+        var PERF_LEVELS = [
+            { max: 75, label: 'Ideal', color: '#30d158', tip: 'tudo fluindo bem' },
+            { max: 90, label: 'Moderado', color: '#ffd60a', tip: 'normal com apps abertos' },
+            { max: 101, label: 'Alto', color: '#ff453a', tip: 'feche apps que não está usando' }
+        ];
+
+        function formatMemory(kb) {
+            return kb >= 1048576 ? (kb / 1048576).toFixed(1).replace('.', ',') + ' GB' : Math.round(kb / 1024) + ' MB';
+        }
+
+        function readMeminfo(onDone) {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', 'file:///proc/meminfo', true);
+                xhr.onload = function() { onDone(xhr.responseText || ''); };
+                xhr.onerror = function() { onDone(''); };
+                xhr.send();
+            } catch (e) { onDone(''); }
+        }
+
+        // A resposta do serviço não é documentada para TVs: procura campos de total e livre em
+        // qualquer nível (valores em MB ou kB, normalizados para kB pelo tamanho).
+        function findMemoryFields(obj) {
+            var found = {};
+            (function walk(node) {
+                if (!node || typeof node !== 'object') return;
+                Object.keys(node).forEach(function(key) {
+                    var v = node[key];
+                    if (typeof v === 'number') {
+                        if (/total/i.test(key) && !found.total) found.total = v;
+                        else if (/avail|free/i.test(key) && !found.avail) found.avail = v;
+                    } else walk(v);
+                });
+            })(obj);
+            if (!found.total || !found.avail) return null;
+            // Unidade pelo tamanho do total: < 64 mil = MB, > 64 milhões = bytes, senão kB.
+            var toKb = found.total < 65536 ? 1024 : found.total > 67108864 ? 1 / 1024 : 1;
+            return { totalKb: found.total * toKb, availKb: found.avail * toKb };
+        }
+
+        function readMemoryService(onDone) {
+            if (!window.webOS || !window.webOS.service || typeof window.webOS.service.request !== 'function') { onDone(null, 'sem webOS'); return; }
+            try {
+                webOS.service.request('luna://com.webos.memorymanager', {
+                    method: 'getCurrentMemState',
+                    parameters: {},
+                    onSuccess: function(res) {
+                        var mem = findMemoryFields(res);
+                        onDone(mem, mem ? '' : 'resposta: ' + JSON.stringify(res).slice(0, 80));
+                    },
+                    onFailure: function(err) { onDone(null, (err && err.errorText) || 'serviço negado'); }
+                });
+            } catch (e) { onDone(null, 'erro no serviço'); }
+        }
+
+        function updatePerformance() {
+            readMemoryService(function(serviceMem, serviceError) {
+                if (serviceMem) { showMemory(serviceMem.totalKb, serviceMem.availKb); return; }
+                readMeminfo(function(text) {
+                    var total = /MemTotal:\s+(\d+)/.exec(text);
+                    var avail = /MemAvailable:\s+(\d+)/.exec(text);
+                    if (total && avail) { showMemory(parseInt(total[1], 10), parseInt(avail[1], 10)); return; }
+                    document.getElementById('perfValue').textContent = '--%';
+                    document.getElementById('perfPulse').style.background = 'var(--text-secondary)';
+                    document.getElementById('perfDetail').textContent = 'Leitura indisponível nesta TV (' + serviceError + ').';
+                });
+            });
+        }
+
+        function showMemory(totalKb, availKb) {
+            var used = Math.max(0, Math.min(100, Math.round((totalKb - availKb) / totalKb * 100)));
+            var level = arrFind(PERF_LEVELS, function(l) { return used < l.max; });
+            var value = document.getElementById('perfValue');
+            value.textContent = used + '%';
+            value.style.color = level.color;
+            document.getElementById('perfPulse').style.background = level.color;
+            document.getElementById('perfMarker').style.left = used + '%';
+            document.getElementById('perfDetail').textContent = level.label + ' • ' + formatMemory(availKb) + ' livres de ' + formatMemory(totalKb) + ' • ' + level.tip;
+        }
+
+        // --- Principais notícias (vídeos recentes da CNN Brasil e do g1 no YouTube) ---
+        var NEWS_CHANNELS = [
+            { name: 'CNN Brasil', id: 'UCvdwhh_fDyWccR42-rReZLw', color: '#cc0000' },
+            { name: 'g1', id: 'UCaGmdJSSiR7fkh2A-c6emsA', color: '#c4170c' }
+        ];
+        var YT_NS = 'http://www.youtube.com/xml/schemas/2015';
+        var MEDIA_NS = 'http://search.yahoo.com/mrss/';
+
+        function fetchChannelVideos(channel) {
+            return fetch('https://www.youtube.com/feeds/videos.xml?channel_id=' + channel.id)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('feed ' + res.status);
+                    return res.text();
                 })
-                .then(function(handled) {
-                    if (!handled) showCurated();
+                .then(function(xml) {
+                    var doc = new DOMParser().parseFromString(xml, 'application/xml');
+                    return toArray(doc.getElementsByTagName('entry')).map(function(entry) {
+                        function ns(uri, tag) { return entry.getElementsByTagNameNS(uri, tag)[0]; }
+                        var link = entry.getElementsByTagName('link')[0];
+                        var stats = ns(MEDIA_NS, 'statistics');
+                        var thumb = ns(MEDIA_NS, 'thumbnail');
+                        var title = entry.getElementsByTagName('title')[0];
+                        return {
+                            videoId: (ns(YT_NS, 'videoId') || {}).textContent || '',
+                            title: title ? title.textContent : '',
+                            url: link ? link.getAttribute('href') : '',
+                            published: Date.parse((entry.getElementsByTagName('published')[0] || {}).textContent || ''),
+                            views: stats ? parseInt(stats.getAttribute('views'), 10) || 0 : 0,
+                            thumb: thumb ? thumb.getAttribute('url') : '',
+                            channel: channel
+                        };
+                    });
                 })
-                .catch(showCurated);
+                .catch(function() { return []; });
+        }
+
+        // Os 3 vídeos mais vistos das últimas 24 h (Shorts e transmissões agendadas ficam de fora),
+        // no máximo 2 do mesmo canal.
+        function fetchNews() {
+            if (typeof fetch !== 'function' || typeof DOMParser !== 'function') { renderNews([]); return; }
+            Promise.all(NEWS_CHANNELS.map(fetchChannelVideos)).then(function(lists) {
+                var all = [].concat.apply([], lists).filter(function(v) {
+                    return /^[A-Za-z0-9_-]{11}$/.test(v.videoId) && v.title && v.views > 0 && v.url.indexOf('/shorts/') === -1;
+                });
+                var recent = all.filter(function(v) { return Date.now() - v.published < 24 * 3600 * 1000; });
+                if (recent.length < 3) recent = all;
+                recent.sort(function(a, b) { return b.views - a.views; });
+                var picked = [];
+                var perChannel = {};
+                recent.forEach(function(v) {
+                    if (picked.length >= 3 || (perChannel[v.channel.id] || 0) >= 2) return;
+                    perChannel[v.channel.id] = (perChannel[v.channel.id] || 0) + 1;
+                    picked.push(v);
+                });
+                renderNews(picked);
+            });
+        }
+
+        function timeAgo(ms) {
+            var minutes = Math.max(1, Math.round((Date.now() - ms) / 60000));
+            if (minutes < 60) return 'há ' + minutes + ' min';
+            var hours = Math.round(minutes / 60);
+            return hours < 24 ? 'há ' + hours + ' h' : 'há ' + Math.round(hours / 24) + ' d';
+        }
+
+        function formatViews(n) {
+            if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.', ',') + ' mi';
+            if (n >= 1000) return Math.round(n / 1000) + ' mil';
+            return String(n);
+        }
+
+        function renderNews(videos) {
+            var grid = document.getElementById('newsGrid');
+            grid.innerHTML = '';
+            document.getElementById('newsHint').textContent = videos.length ? 'OK abre o vídeo no YouTube' : '';
+            if (!videos.length) {
+                var empty = document.createElement('div');
+                empty.className = 'news-empty';
+                empty.textContent = 'Notícias indisponíveis no momento.';
+                grid.appendChild(empty);
+            }
+            videos.forEach(function(video) {
+                var card = document.createElement('div');
+                card.className = 'news-card nav-item';
+                card.setAttribute('role', 'button');
+                card.setAttribute('aria-label', video.channel.name + ': ' + video.title);
+                card.dataset.color = video.channel.color;
+
+                var thumb = document.createElement('div');
+                thumb.className = 'news-thumb';
+                // Thumbnail URLs come from the feed, so only plain https URLs may enter the CSS url().
+                if (/^https:\/\/[^\s"'()\\]+$/.test(video.thumb)) thumb.style.backgroundImage = "url('" + video.thumb + "')";
+
+                // Video titles come from YouTube, so they are set as text, never HTML.
+                var text = document.createElement('div');
+                text.className = 'news-text';
+                var source = document.createElement('div');
+                source.className = 'news-source';
+                source.style.background = video.channel.color;
+                source.textContent = video.channel.name;
+                var title = document.createElement('div');
+                title.className = 'news-title';
+                title.textContent = video.title;
+                var meta = document.createElement('div');
+                meta.className = 'news-meta';
+                meta.textContent = timeAgo(video.published) + ' • ' + formatViews(video.views) + ' visualizações';
+                text.appendChild(source);
+                text.appendChild(title);
+                text.appendChild(meta);
+                card.appendChild(thumb);
+                card.appendChild(text);
+
+                card.addEventListener('mouseenter', function() { setMainFocus(card); });
+                card.addEventListener('click', function() {
+                    launchApp(catalogApp('youtube.leanback.v4').id, '', { contentTarget: 'https://www.youtube.com/tv?v=' + video.videoId });
+                });
+                grid.appendChild(card);
+            });
+            refreshMainNavList();
         }
 
         // --- Discover Installed Apps from LG webOS ---
@@ -1478,7 +2105,6 @@
                                         alias.id = appId;
                                         state.favorites = state.favorites.map(function(f) { return f === oldId ? appId : f; });
                                         state.catalog.forEach(function(c) { if (c.app === oldId) c.app = appId; });
-                                        FALLBACK_MOVIES.concat(FALLBACK_SHOWS).forEach(function(p) { if (p.app === oldId) p.app = appId; });
                                         exists = alias;
                                     }
                                 }
@@ -1510,10 +2136,11 @@
         var shelfEdit = null;
         var movingTileId = null;
         var pendingLaunch = null;
-        function launchApp(appId) {
+        function launchApp(appId, hint, params) {
             if (shelfEdit || pendingLaunch) return; // Ignore repeated remote presses while a request is pending.
             var app = arrFind(state.catalog, function(item) { return item.id === appId; });
             var title = app ? (devicePreset(app, state.hdmiDevices).title || app.title) : appId;
+            var opening = 'Abrindo ' + title + '…' + (hint ? ' ' + hint : '');
             if (!window.webOS || !window.webOS.service || typeof window.webOS.service.request !== 'function') {
                 showToast('Abra ' + title + ' na TV. A abertura não funciona nesta prévia.', 5000);
                 return;
@@ -1550,7 +2177,7 @@
                             if (pendingLaunch !== request) return;
                             var reply = null;
                             try { reply = JSON.parse(result && result.stdout || ''); } catch (e) {}
-                            if (reply && reply.returnValue === true) finish('Abrindo ' + title + '…');
+                            if (reply && reply.returnValue === true) finish(opening);
                             else if (reply && reply.returnValue === false) failure(reply);
                             else finish('Não deu para confirmar se ' + title + ' abriu. Tente de novo.');
                         },
@@ -1558,18 +2185,18 @@
                     });
                 } catch (e) { failure(originalError); }
             }
-            showToast('Abrindo ' + title + '…', 8000);
+            showToast(opening, 8000);
             request.timer = setTimeout(function() {
                 finish('Sem resposta ao abrir ' + title + '. Tente de novo.');
             }, 8000);
             try {
                 webOS.service.request('luna://com.webos.applicationManager', {
                     method: 'launch',
-                    parameters: { id: appId },
+                    parameters: params ? { id: appId, params: params } : { id: appId },
                     onSuccess: function(result) {
                         if (pendingLaunch !== request) return;
                         if (result && result.returnValue === false) fallback(result);
-                        else finish('Abrindo ' + title + '…');
+                        else finish(opening);
                     },
                     onFailure: fallback
                 });
@@ -1621,6 +2248,7 @@
                     var logo = APP_LOGOS[app.id];
                     if (logo || app.iconUrl) {
                         addTileImage(iconDiv, logo ? 'assets/brands/' + logo + '.svg' : app.iconUrl, !!logo);
+                        if (app.photo) iconDiv.lastChild.classList.add('tile-photo');
                     }
                 }
 
@@ -1634,6 +2262,7 @@
                 btn.addEventListener('mouseenter', function() { setMainFocus(btn); });
                 btn.addEventListener('click', function() {
                     if (shelfEdit) { movingTileId = movingTileId === app.id ? null : app.id; renderAppsShelf(); focusShelfTile(app.id); }
+                    else if (app.photo) openPhoto(app);
                     else launchApp(app.id);
                 });
                 grid.appendChild(btn);
@@ -1643,46 +2272,87 @@
             refreshMainNavList();
         }
 
-        function renderPicks(picks) {
-            var grid = document.getElementById('picksGrid');
-            grid.innerHTML = '';
+        function renderCarousel(items, savedAt) {
+            var box = document.getElementById('heroCarousel');
+            toArray(box.querySelectorAll('.carousel-slide')).forEach(function(el) { el.remove(); });
+            var dots = document.getElementById('carouselDots');
+            dots.innerHTML = '';
+            carousel.savedAt = savedAt;
+            carousel.items = items.filter(function(item) { return serviceByKey(item.service); });
+            carousel.index = 0;
+            document.getElementById('carouselStatus').textContent = carousel.items.length ? '' : 'Nenhum destaque agora.';
 
-            picks.forEach(function(pick) {
-                var card = document.createElement('div');
-                card.className = 'pick-card nav-item';
-                card.dataset.app = pick.app;
-                card.dataset.tag = pick.badge;
-                card.dataset.title = pick.title;
-                card.dataset.desc = pick.desc;
-                card.dataset.color = pick.color || '#0a84ff';
+            var daysLeft = savedAt ? Math.max(1, Math.ceil((savedAt + CAROUSEL_TTL_MS - Date.now()) / 86400000)) : 0;
+            document.getElementById('carouselSource').textContent = savedAt
+                ? 'Destaques • novos em ' + daysLeft + (daysLeft === 1 ? ' dia' : ' dias')
+                : 'Seleção • chave TMDB traz os lançamentos';
 
-                var poster = document.createElement('div');
-                poster.className = 'pick-poster';
-                // Poster URLs come from third-party APIs, so only plain https URLs may enter the CSS url().
-                if (pick.poster && /^https:\/\/[^\s"'()\\]+$/.test(pick.poster)) {
-                    poster.style.backgroundImage = "url('" + pick.poster + "')";
-                }
-
-                // Pick text comes from TMDB/TVMaze (TVMaze is community-edited), so it is set as text, never HTML.
-                var meta = document.createElement('div');
-                meta.className = 'pick-meta';
-                [['pick-badge', pick.badge], ['pick-title', pick.title], ['pick-service', pick.service]].forEach(function(part) {
+            carousel.items.forEach(function(item) {
+                var app = serviceByKey(item.service).app;
+                var slide = document.createElement('div');
+                slide.className = 'carousel-slide';
+                var bg = document.createElement('div');
+                bg.className = 'carousel-bg';
+                // Backdrop URLs come from a third-party API, so only plain https URLs may enter the CSS url().
+                bg.style.backgroundImage = item.backdrop && /^https:\/\/[^\s"'()\\]+$/.test(item.backdrop)
+                    ? "url('" + item.backdrop + "')"
+                    : 'linear-gradient(120deg, #05070c 30%, ' + app.color + ')';
+                var shade = document.createElement('div');
+                shade.className = 'carousel-shade';
+                // Title text comes from TMDB, so it is set as text, never HTML.
+                var content = document.createElement('div');
+                content.className = 'carousel-content';
+                var badge = document.createElement('div');
+                badge.className = 'carousel-service';
+                badge.style.background = app.color;
+                badge.textContent = app.title;
+                content.appendChild(badge);
+                [['carousel-meta', item.info], ['carousel-title', item.title], ['carousel-desc', item.desc],
+                 ['carousel-cta', 'OK para assistir no ' + app.title + '   ‹ ›  outros destaques']].forEach(function(part) {
                     var el = document.createElement('div');
                     el.className = part[0];
                     el.textContent = part[1];
-                    meta.appendChild(el);
+                    content.appendChild(el);
                 });
+                slide.appendChild(bg);
+                slide.appendChild(shade);
+                slide.appendChild(content);
+                box.insertBefore(slide, document.getElementById('carouselSource'));
 
-                card.appendChild(poster);
-                card.appendChild(meta);
-
-                card.addEventListener('mouseenter', function() { setMainFocus(card); });
-                card.addEventListener('click', function() { launchApp(pick.app); });
-                grid.appendChild(card);
+                var dot = document.createElement('div');
+                dot.className = 'carousel-dot';
+                dots.appendChild(dot);
             });
-
-            refreshMainNavList();
+            showSlide(0);
         }
+
+        function showSlide(index) {
+            var count = carousel.items.length;
+            if (!count) return;
+            carousel.index = (index + count) % count;
+            var box = document.getElementById('heroCarousel');
+            toArray(box.querySelectorAll('.carousel-slide')).forEach(function(el, i) { el.classList.toggle('active', i === carousel.index); });
+            toArray(document.querySelectorAll('.carousel-dot')).forEach(function(el, i) { el.classList.toggle('active', i === carousel.index); });
+            var item = carousel.items[carousel.index];
+            var app = serviceByKey(item.service).app;
+            box.dataset.color = app.color;
+            box.setAttribute('aria-label', 'Destaque: ' + item.title + ', ' + app.title);
+            if (box.classList.contains('focused')) setMainFocus(box);
+            clearInterval(carousel.timer);
+            carousel.timer = setInterval(function() { if (!screensaverOn) showSlide(carousel.index + 1); }, CAROUSEL_SLIDE_MS);
+        }
+
+        document.getElementById('heroCarousel').addEventListener('click', function() {
+            var item = carousel.items[carousel.index];
+            if (!item) return;
+            var service = serviceByKey(item.service);
+            var direct = item.serviceId && service.deepLink && service.idPattern.test(item.serviceId);
+            if (direct) launchApp(service.app.id, '', service.deepLink(item.serviceId));
+            else launchApp(service.app.id, 'Procure por "' + item.title + '".');
+        });
+        document.getElementById('heroCarousel').addEventListener('mouseenter', function() {
+            setMainFocus(document.getElementById('heroCarousel'));
+        });
 
         function focusShelfTile(id) {
             var tile = arrFind(toArray(document.querySelectorAll('.app-tile')), function(el) { return el.dataset.id === id; });
@@ -1734,15 +2404,14 @@
         var modalNavItems = [];
         var modalIndex = 0;
 
-        var heroTag = document.getElementById('heroTag');
-        var heroTitle = document.getElementById('heroTitle');
-        var heroDesc = document.getElementById('heroDesc');
         var ambientGlow = document.getElementById('ambientGlow');
 
         function refreshMainNavList() {
             mainNavItems = toArray(document.querySelectorAll(shelfEdit ? '.shelf-wrapper .nav-item' : '.nav-item')).filter(function(el) { return el.offsetParent !== null; });
             if (mainNavItems.length > 0) {
-                curIndex = Math.min(curIndex, mainNavItems.length - 1);
+                // Re-rendering a row shifts indexes: keep focus on the same element when it survived.
+                var stillFocused = mainNavItems.indexOf(document.querySelector('.nav-item.focused'));
+                curIndex = stillFocused !== -1 ? stillFocused : Math.min(curIndex, mainNavItems.length - 1);
                 // Default focus on first app tile if starting
                 var firstAppIdx = arrFindIndex(mainNavItems, function(el) { return el.classList.contains('app-tile'); });
                 if (!document.querySelector('.nav-item.focused') && firstAppIdx !== -1) {
@@ -1759,10 +2428,6 @@
             item.focus({ preventScroll: true });
             curIndex = mainNavItems.indexOf(item);
 
-            heroTag.textContent = item.dataset.tag || 'Seleção';
-            heroTitle.textContent = item.dataset.title || '';
-            heroDesc.textContent = item.dataset.desc || '';
-
             var color = item.dataset.color || '#0a84ff';
             ambientGlow.style.background = 'radial-gradient(circle, ' + color + '35 0%, rgba(0,0,0,0) 70%)';
         }
@@ -1774,6 +2439,11 @@
         function moveFocusVertical(dir) {
             var current = mainNavItems[curIndex];
             if (!current) return;
+            // Descendo do carrossel vai direto para os apps, sem parar no botão Reordenar.
+            if (current.id === 'heroCarousel' && dir === 1) {
+                var firstTile = document.querySelector('.app-tile');
+                if (firstTile) { setMainFocus(firstTile); return; }
+            }
             var cur = current.getBoundingClientRect();
             var curX = cur.left + cur.width / 2;
             var curY = cur.top + cur.height / 2;
@@ -1912,27 +2582,24 @@
             setMainFocus(document.getElementById('weatherWidget'));
         });
 
-        // --- Trending Tabs: Movies / Shows ---
-        function switchPicksTab(tab) {
-            if (state.picksTab === tab) return;
-            state.picksTab = tab;
-            document.getElementById('tabMovies').classList.toggle('active', tab === 'movies');
-            document.getElementById('tabShows').classList.toggle('active', tab === 'shows');
-            fetchTrendingPicks();
-        }
-        document.getElementById('tabMovies').addEventListener('click', function() { switchPicksTab('movies'); });
-        document.getElementById('tabShows').addEventListener('click', function() { switchPicksTab('shows'); });
-        document.getElementById('tabMovies').addEventListener('mouseenter', function() {
-            setMainFocus(document.getElementById('tabMovies'));
-        });
-        document.getElementById('tabShows').addEventListener('mouseenter', function() {
-            setMainFocus(document.getElementById('tabShows'));
-        });
-
         // --- Weather & Sun Drawer ---
         var weatherDrawer = document.getElementById('weatherDrawer');
         var closeDrawerBtn = document.getElementById('closeDrawerBtn');
         var drawerOpen = false;
+        var photoOpen = false;
+
+        function openPhoto(app) {
+            document.getElementById('photoViewerImg').src = app.photo;
+            document.getElementById('photoViewerCaption').textContent = app.title;
+            document.getElementById('photoViewer').classList.add('active');
+            photoOpen = true;
+        }
+
+        function closePhoto() {
+            document.getElementById('photoViewer').classList.remove('active');
+            photoOpen = false;
+        }
+        document.getElementById('photoViewer').addEventListener('click', closePhoto);
 
         function renderDrawerForecast() {
             document.getElementById('drawerIcon').textContent = document.getElementById('weatherIcon').textContent;
@@ -2010,7 +2677,7 @@
         document.addEventListener('mousedown', markActivity);
 
         setInterval(function() {
-            if (!screensaverOn && !modalOpen && !drawerOpen && Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
+            if (!screensaverOn && !modalOpen && !drawerOpen && !photoOpen && Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
                 enterScreensaver();
             }
         }, 10000);
@@ -2020,7 +2687,7 @@
             tempFavorites = DEFAULT_FAVORITES.slice();
             tempDevices = {};
             renderHDMIOptions();
-            document.getElementById('cfgCity').value = '';
+            document.getElementById('cfgCity').value = DEFAULT_CITY;
             document.getElementById('cfgTheme').value = 'oled';
             document.getElementById('cfgTmdbKey').value = '';
             renderAppSelectorGrid();
@@ -2032,7 +2699,7 @@
             state.favorites = tempFavorites.slice();
             state.hdmiDevices = shallowClone(tempDevices);
             localStorage.setItem('fmtv_hdmi_devices', JSON.stringify(state.hdmiDevices));
-            state.city = document.getElementById('cfgCity').value.trim();
+            state.city = document.getElementById('cfgCity').value.trim() || DEFAULT_CITY;
             state.theme = document.getElementById('cfgTheme').value;
             state.tmdbKey = document.getElementById('cfgTmdbKey').value.trim();
 
@@ -2044,7 +2711,7 @@
             renderAppsShelf();
             applyTheme();
             fetchWeather();
-            fetchTrendingPicks();
+            loadCarousel();
             closeSettingsModal();
             showToast('Salvo e aplicado!');
         });
@@ -2074,6 +2741,12 @@
                     } else return;
                     e.preventDefault(); return;
                 }
+            }
+
+            if (photoOpen) {
+                if (e.keyCode === 461 || e.key === 'Escape' || e.key === 'GoBack' || e.key === 'Enter') closePhoto();
+                e.preventDefault();
+                return;
             }
 
             // Back button on LG Magic Remote (461) or Escape
@@ -2116,6 +2789,11 @@
             }
 
             // Main Dashboard Spatial Navigation
+            if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && mainNavItems[curIndex] && mainNavItems[curIndex].id === 'heroCarousel') {
+                showSlide(carousel.index + (e.key === 'ArrowLeft' ? -1 : 1));
+                e.preventDefault();
+                return;
+            }
             if (e.key === 'ArrowRight') {
                 curIndex = (curIndex + 1) % mainNavItems.length;
                 setMainFocus(mainNavItems[curIndex]);
@@ -2140,14 +2818,17 @@
 
         // --- Boot Sequence ---
         renderAppsShelf();
-        renderPicks(FALLBACK_MOVIES);
         applyTheme();
         fetchWeather();
-        fetchTrendingPicks();
+        loadCarousel();
+        fetchNews();
+        updatePerformance();
         discoverTVApps();
-        // Refresh weather & picks every 30 mins
+        // Refresh weather and news every 30 mins; the carousel checks hourly whether its 3 days are up
         setInterval(fetchWeather, 30 * 60 * 1000);
-        setInterval(fetchTrendingPicks, 60 * 60 * 1000);
+        setInterval(fetchNews, 30 * 60 * 1000);
+        setInterval(updatePerformance, 5000);
+        setInterval(loadCarousel, 60 * 60 * 1000);
     </script>
 </body>
 </html>

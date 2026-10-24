@@ -18,6 +18,15 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Chave TMDB fora do repositório: o app recebe nos parâmetros de abertura e guarda na TV.
+TMDB_KEY_FILE = os.path.expanduser("~/.minhatv/tmdb_key")
+
+def read_tmdb_key():
+    key = os.environ.get("MINHATV_TMDB_KEY", "").strip()
+    if not key and os.path.exists(TMDB_KEY_FILE):
+        with open(TMDB_KEY_FILE, "r", encoding="utf-8") as f:
+            key = f.read().strip()
+    return key
 
 with open(os.path.join(REPO_DIR, "app", "appinfo.json"), "r", encoding="utf-8") as _f:
     _appinfo = json.load(_f)
@@ -145,7 +154,13 @@ def install_app(tv_ip, passphrase=None):
         return False
 
     print("[*] Abrindo a Minha TV...")
-    launch_payload = json.dumps({"id": APP_ID})
+    launch_payload = {"id": APP_ID}
+    tmdb_key = read_tmdb_key()
+    # Only plain key characters go into the single-quoted remote shell command.
+    if tmdb_key and all(c.isalnum() or c in "._-" for c in tmdb_key):
+        launch_payload["params"] = {"tmdbKey": tmdb_key}
+        print("[*] Enviando a chave TMDB para o catálogo...")
+    launch_payload = json.dumps(launch_payload)
     launch_remote_cmd = f"luna-send-pub -n 1 luna://com.webos.applicationManager/launch '{launch_payload}'"
     launch_res = run_luna(launch_remote_cmd)
     if '"returnValue":true' not in launch_res.stdout:
