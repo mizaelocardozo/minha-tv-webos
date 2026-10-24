@@ -1837,11 +1837,14 @@
             });
         }
 
-        // --- Principais notícias (vídeos recentes da CNN Brasil e do g1 no YouTube) ---
+        // --- Principais notícias (vídeos das últimas 3 h dos portais no YouTube) ---
         var NEWS_CHANNELS = [
             { name: 'CNN Brasil', id: 'UCvdwhh_fDyWccR42-rReZLw', color: '#cc0000' },
-            { name: 'g1', id: 'UCaGmdJSSiR7fkh2A-c6emsA', color: '#c4170c' }
+            { name: 'g1', id: 'UCaGmdJSSiR7fkh2A-c6emsA', color: '#c4170c' },
+            { name: 'UOL', id: 'UCVFbXI6Gu8U2f9Gjtxw4A-Q', color: '#d48a00' },
+            { name: 'Jovem Pan', id: 'UCP391YRAjSOdM_bwievgaZA', color: '#0d3c84' }
         ];
+        var NEWS_WINDOW_MS = 3 * 3600 * 1000;
         var YT_NS = 'http://www.youtube.com/xml/schemas/2015';
         var MEDIA_NS = 'http://search.yahoo.com/mrss/';
 
@@ -1873,25 +1876,29 @@
                 .catch(function() { return []; });
         }
 
-        // Os 3 vídeos mais vistos das últimas 24 h (Shorts e transmissões agendadas ficam de fora),
-        // no máximo 2 do mesmo canal.
+        // Só vídeos das últimas 3 h (sem Shorts nem transmissões agendadas), ordenados por visualizações
+        // por hora, para um vídeo novo não perder para um mais antigo só pelo tempo no ar.
+        // Primeiro o melhor de cada portal (fontes diferentes), depois completa até 3.
         function fetchNews() {
             if (typeof fetch !== 'function' || typeof DOMParser !== 'function') { renderNews([]); return; }
             Promise.all(NEWS_CHANNELS.map(fetchChannelVideos)).then(function(lists) {
-                var all = [].concat.apply([], lists).filter(function(v) {
-                    return /^[A-Za-z0-9_-]{11}$/.test(v.videoId) && v.title && v.views > 0 && v.url.indexOf('/shorts/') === -1;
+                var now = Date.now();
+                var recent = [].concat.apply([], lists).filter(function(v) {
+                    return /^[A-Za-z0-9_-]{11}$/.test(v.videoId) && v.title && v.views > 0 &&
+                        v.url.indexOf('/shorts/') === -1 && now - v.published < NEWS_WINDOW_MS;
                 });
-                var recent = all.filter(function(v) { return Date.now() - v.published < 24 * 3600 * 1000; });
-                if (recent.length < 3) recent = all;
-                recent.sort(function(a, b) { return b.views - a.views; });
+                recent.forEach(function(v) { v.rate = v.views / Math.max(0.25, (now - v.published) / 3600000); });
+                recent.sort(function(a, b) { return b.rate - a.rate; });
                 var picked = [];
-                var perChannel = {};
+                var seenChannel = {};
                 recent.forEach(function(v) {
-                    if (picked.length >= 3 || (perChannel[v.channel.id] || 0) >= 2) return;
-                    perChannel[v.channel.id] = (perChannel[v.channel.id] || 0) + 1;
-                    picked.push(v);
+                    if (picked.length < 3 && !seenChannel[v.channel.id]) { seenChannel[v.channel.id] = true; picked.push(v); }
                 });
-                renderNews(picked);
+                recent.forEach(function(v) {
+                    if (picked.length < 3 && picked.indexOf(v) === -1) picked.push(v);
+                });
+                picked.sort(function(a, b) { return b.rate - a.rate; });
+                renderNews(picked, lists.some(function(list) { return list.length; }));
             });
         }
 
@@ -1908,14 +1915,14 @@
             return String(n);
         }
 
-        function renderNews(videos) {
+        function renderNews(videos, feedsLoaded) {
             var grid = document.getElementById('newsGrid');
             grid.innerHTML = '';
-            document.getElementById('newsHint').textContent = videos.length ? 'OK abre o vídeo no YouTube' : '';
+            document.getElementById('newsHint').textContent = 'Últimas 3 horas • CNN, g1, UOL e Jovem Pan' + (videos.length ? ' • OK abre no YouTube' : '');
             if (!videos.length) {
                 var empty = document.createElement('div');
                 empty.className = 'news-empty';
-                empty.textContent = 'Notícias indisponíveis no momento.';
+                empty.textContent = feedsLoaded ? 'Nenhuma notícia nova nas últimas 3 horas.' : 'Notícias indisponíveis no momento.';
                 grid.appendChild(empty);
             }
             videos.forEach(function(video) {
@@ -2703,9 +2710,9 @@
         loadCarousel();
         fetchNews();
         discoverTVApps();
-        // Refresh weather and news every 30 mins; the carousel checks hourly whether its 3 days are up
+        // Refresh weather every 30 mins and news every 15; the carousel checks hourly whether its 3 days are up
         setInterval(fetchWeather, 30 * 60 * 1000);
-        setInterval(fetchNews, 30 * 60 * 1000);
+        setInterval(fetchNews, 15 * 60 * 1000);
         setInterval(loadCarousel, 60 * 60 * 1000);
     </script>
 </body>

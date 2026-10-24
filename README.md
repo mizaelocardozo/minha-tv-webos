@@ -11,7 +11,7 @@ Baseado no projeto [FreeMyTvWebOS](https://github.com/danielthejoker18/FreeMyTvW
 - **Destaques** no topo: carrossel animado com 4 filmes e 3 séries lançados recentemente e bem avaliados, sorteados entre Netflix, Prime Video, Disney+, Globoplay e HBO Max, mais um **DESTAQUE** extra de série policial (de preferência do Prime Video); renova a cada 3 dias. Títulos da Netflix abrem direto na página do título
 - Bloco **Tuti** na prateleira: OK abre a foto em tela cheia
 - **Clima** de Cidade Ocidental-GO (padrão) com previsão das próximas horas, abaixo dos apps
-- **Principais notícias**: os 3 vídeos mais vistos do dia da CNN Brasil e do g1; OK abre o vídeo no YouTube
+- **Principais notícias**: 3 destaques das últimas 3 horas dos canais da CNN Brasil, g1, UOL e Jovem Pan no YouTube (os mais assistidos por hora, um por portal); OK abre o vídeo no YouTube
 - Tema **Preto OLED** como padrão
 - Prateleira padrão, nesta ordem: YouTube, Prime Video, Disney+, Globoplay, HBO Max e Netflix
 - HBO Max e Globoplay são reconhecidos pelo nome, mesmo que o ID do app na TV seja diferente
