@@ -469,13 +469,16 @@
         }
 
         .app-icon svg { width: 75%; height: 75%; }
+        /* Posição explícita: TVs antigas (Chromium 38) não centralizam sozinhas um filho absoluto de flexbox. */
         .app-icon img {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
-        .app-icon img.tile-brand-logo { width: 76%; height: 76%; }
+        .app-icon img.tile-brand-logo { top: 12%; left: 12%; width: 76%; height: 76%; }
         .app-icon img.tile-photo { object-fit: cover; object-position: center 30%; }
 
         /* Foto em tela cheia (bloco de foto da prateleira). */
@@ -2050,14 +2053,15 @@
             box.dataset.color = '#c47a2c';
             box.setAttribute('aria-label', SPECIAL.title + ': OK abre no YouTube');
             // A capa do vídeo fica por trás. TVs antigas desenham o vídeo numa camada separada que
-            // não aparece dentro do quadro (só o som): nelas o player fica invisível e a capa aparece.
+            // não aparece dentro do quadro (só o som): nelas o player fica minúsculo e a capa aparece.
             box.style.backgroundImage = "url('https://i.ytimg.com/vi/" + SPECIAL.id + "/maxresdefault.jpg')";
             box.style.backgroundSize = 'cover';
             box.style.backgroundPosition = 'center';
             var iframe = document.createElement('iframe');
             iframe.setAttribute('allow', 'autoplay; encrypted-media');
             iframe.src = SPECIAL_PLAYER_URL + '?v=' + SPECIAL.id;
-            if (window.MINHATV_LEGACY) iframe.style.opacity = '0';
+            // Invisível (opacity 0) a TV antiga pausa o som; minúsculo no canto ela continua tocando.
+            if (window.MINHATV_LEGACY) iframe.style.cssText = 'position:absolute;right:0;bottom:0;width:2px;height:2px;';
             box.appendChild(iframe);
             var label = document.createElement('div');
             label.className = 'special-video-label';
