@@ -19,8 +19,36 @@ def read_appinfo():
         info = json.load(f)
     return info["id"], info["version"]
 
-def ipk_filename(app_id, version):
-    return f"{app_id}_{version}_all.ipk"
+def ipk_filename(app_id, version, profile=None):
+    suffix = f"_{profile}" if profile else ""
+    return f"{app_id}_{version}{suffix}_all.ipk"
+
+
+def stage_profile(profile):
+    """Copia app/ para uma pasta temporária e sobrepõe os arquivos de profiles/<perfil>/
+    (profile.js e fotos em assets/). Devolve o caminho da cópia."""
+    import tempfile
+    src = os.path.join(REPO_DIR, "profiles", profile)
+    if not os.path.isfile(os.path.join(src, "profile.js")):
+        sys.exit(f"[!] Perfil não encontrado: {src}/profile.js")
+    stage = os.path.join(tempfile.mkdtemp(prefix="minhatv-"), "app")
+    shutil.copytree(APP_DIR, stage)
+    # Fotos de uma TV não vão no pacote da outra.
+    for name in os.listdir(os.path.join(stage, "assets")):
+        if name.startswith("tuti"):
+            os.remove(os.path.join(stage, "assets", name))
+    shutil.copytree(src, stage, dirs_exist_ok=True)
+    # appinfo.override.json do perfil (ex.: outro nome na lista de apps) entra no appinfo.json.
+    override = os.path.join(stage, "appinfo.override.json")
+    if os.path.exists(override):
+        with open(os.path.join(stage, "appinfo.json"), encoding="utf-8") as f:
+            info = json.load(f)
+        with open(override, encoding="utf-8") as f:
+            info.update(json.load(f))
+        with open(os.path.join(stage, "appinfo.json"), "w", encoding="utf-8") as f:
+            json.dump(info, f, ensure_ascii=False, indent=2)
+        os.remove(override)
+    return stage
 
 def _fix_ipk_timestamps(ipk_path):
     """Rewrite epoch-zero mtimes inside control.tar.gz/data.tar.gz.
@@ -82,14 +110,17 @@ def _fix_ipk_timestamps(ipk_path):
             if len(content) % 2 != 0:
                 f.write(b"\n")
 
-def build():
+def build(profile=None):
+    global APP_DIR
     os.makedirs(DIST_DIR, exist_ok=True)
     app_id, version = read_appinfo()
+    if profile:
+        APP_DIR = stage_profile(profile)
     print(f"[*] Packaging Free My TV from {APP_DIR}...")
-    ipk_path = os.path.join(DIST_DIR, ipk_filename(app_id, version))
+    ipk_path = os.path.join(DIST_DIR, ipk_filename(app_id, version, profile))
 
-    # Check if ares-package is available
-    has_ares = shutil.which("ares-package") is not None
+    # Check if ares-package is available (it names the file itself, so profiles use the Python packager)
+    has_ares = shutil.which("ares-package") is not None and not profile
     built = False
     if has_ares:
         cmd = f'ares-package "{APP_DIR}" -o "{DIST_DIR}"'
@@ -142,7 +173,6 @@ Description: A fast, ad-free 60fps home screen for LG webOS TVs.
     debian_binary = b"2.0\n"
 
     # 4. Standard ar archive
-    ipk_path = os.path.join(DIST_DIR, ipk_filename(app_id, version))
     with open(ipk_path, "wb") as f:
         f.write(b"!<arch>\n")
         def write_ar_entry(name, data):
@@ -160,4 +190,7 @@ Description: A fast, ad-free 60fps home screen for LG webOS TVs.
     return True
 
 if __name__ == "__main__":
-    build()
+    # python scripts/build.py                     -> esta TV (app/profile.js)
+    # python scripts/build.py --profile alexania  -> perfil em profiles/alexania/
+    args = sys.argv[1:]
+    build(args[args.index("--profile") + 1] if "--profile" in args else None)

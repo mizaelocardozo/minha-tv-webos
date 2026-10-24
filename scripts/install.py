@@ -33,6 +33,10 @@ with open(os.path.join(REPO_DIR, "app", "appinfo.json"), "r", encoding="utf-8") 
 APP_ID = _appinfo["id"]
 DIST_IPK = os.path.join(REPO_DIR, "dist", f"{APP_ID}_{_appinfo['version']}_all.ipk")
 
+
+def profile_ipk(profile):
+    return os.path.join(REPO_DIR, "dist", f"{APP_ID}_{_appinfo['version']}_{profile}_all.ipk")
+
 def discover_lg_tv():
     print("[*] Procurando a TV LG (Web TV NANO9TSA) na rede local...")
     msg = (
@@ -64,16 +68,18 @@ def discover_lg_tv():
     sock.close()
     return None
 
-def install_app(tv_ip, passphrase=None):
-    if not os.path.exists(DIST_IPK):
+def install_app(tv_ip, passphrase=None, profile=None):
+    ipk = profile_ipk(profile) if profile else DIST_IPK
+    if not os.path.exists(ipk):
         print("[!] Pacote não encontrado. Gerando primeiro...")
         build_script = os.path.join(REPO_DIR, "scripts", "build.py")
-        subprocess.run(f"python {build_script}", shell=True)
+        subprocess.run([sys.executable, build_script] + (["--profile", profile] if profile else []))
 
     ssh_dir = os.path.expanduser("~/.ssh")
     os.makedirs(ssh_dir, exist_ok=True)
-    raw_key = os.path.join(ssh_dir, "webos_tv_rsa")
-    dec_key = os.path.join(ssh_dir, "webos_tv_rsa_decrypted")
+    # Uma chave por TV: cada TV gera a sua no Developer Mode.
+    raw_key = os.path.join(ssh_dir, f"webos_tv_{tv_ip}_rsa")
+    dec_key = os.path.join(ssh_dir, f"webos_tv_{tv_ip}_rsa_decrypted")
 
     # Download key from TV if not present
     if not os.path.exists(dec_key):
@@ -117,7 +123,7 @@ def install_app(tv_ip, passphrase=None):
     # every local shell's quoting rules; the single remote command string
     # still reaches the TV's real POSIX shell exactly as written.
     ssh_opts = ["-o", "StrictHostKeyChecking=no", "-o", "HostKeyAlgorithms=+ssh-rsa", "-o", "PubkeyAcceptedKeyTypes=+ssh-rsa"]
-    scp_args = ["scp", *ssh_opts, "-P", "9922", "-i", dec_key, DIST_IPK, f"prisoner@{tv_ip}:/media/developer/temp/app.ipk"]
+    scp_args = ["scp", *ssh_opts, "-P", "9922", "-i", dec_key, ipk, f"prisoner@{tv_ip}:/media/developer/temp/app.ipk"]
     res = subprocess.run(scp_args)
     if res.returncode != 0:
         print("[!] Falha no envio (SCP).")
@@ -172,12 +178,19 @@ def install_app(tv_ip, passphrase=None):
     return True
 
 if __name__ == "__main__":
-    ip = sys.argv[1] if len(sys.argv) > 1 else None
-    passphrase = sys.argv[2] if len(sys.argv) > 2 else None
+    # python scripts/install.py [IP] [senha] [--profile nome]
+    args = sys.argv[1:]
+    profile = None
+    if "--profile" in args:
+        i = args.index("--profile")
+        profile = args[i + 1]
+        del args[i:i + 2]
+    ip = args[0] if len(args) > 0 else None
+    passphrase = args[1] if len(args) > 1 else None
 
     if not ip:
         ip = discover_lg_tv()
         if not ip:
             ip = input("Digite o IP da TV (aparece no app Developer Mode): ").strip()
 
-    install_app(ip, passphrase)
+    install_app(ip, passphrase, profile)
