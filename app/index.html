@@ -226,6 +226,32 @@
         }
         /* O controle fala com a Minha TV, não com o player embutido. */
         .special-video iframe { width: 100%; height: 100%; border: 0; pointer-events: none; }
+        /* Fotos da família (álbum do iCloud) ao lado do carrossel. */
+        .side-photos {
+            flex: 0 0 560px;
+            height: 400px;
+            position: relative;
+            border-radius: 28px;
+            overflow: hidden;
+            background: #0b0d12;
+            border: 1.5px solid var(--glass-border);
+        }
+        .side-photos[hidden] { display: none; }
+        .side-photos img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 25%; /* fotos em pé: mantém os rostos no quadro */
+            opacity: 0;
+            transform: scale(1.05);
+            transition: opacity 1.2s ease, transform 8s ease-out;
+        }
+        .side-photos img.active { opacity: 1; transform: scale(1); }
+        .side-photos .special-video-label { z-index: 1; }
+
         .special-video-cover {
             position: absolute;
             top: 0;
@@ -1203,6 +1229,9 @@
         <!-- Destaques: vídeo especial do perfil (opcional) e carrossel com títulos dos seus serviços -->
         <div class="hero-row">
             <div class="special-video nav-item" id="specialVideo" role="button" hidden></div>
+            <div class="side-photos" id="sidePhotos" hidden>
+                <div class="special-video-label" id="sidePhotosTitle"></div>
+            </div>
             <div class="hero-carousel nav-item" id="heroCarousel" role="button" aria-roledescription="carrossel" aria-label="Destaques">
                 <div class="carousel-status" id="carouselStatus">Carregando destaques…</div>
                 <div class="carousel-source" id="carouselSource"></div>
@@ -1556,6 +1585,11 @@
             var launchParams = JSON.parse((window.PalmSystem && window.PalmSystem.launchParams) || '{}');
             if (launchParams && typeof launchParams.tmdbKey === 'string' && launchParams.tmdbKey.trim()) {
                 localStorage.setItem('fmtv_tmdb_key', launchParams.tmdbKey.trim());
+            }
+            // Álbum compartilhado do iCloud (código e servidor), entregue pelo instalador para não ir ao GitHub.
+            var album = launchParams && launchParams.familyAlbum;
+            if (album && /^[A-Za-z0-9_-]{10,40}$/.test(album.key || '') && /^p\d+-ckdatabasews\.icloud\.com$/.test(album.host || '')) {
+                localStorage.setItem('fmtv_family_album', JSON.stringify({ key: album.key, host: album.host }));
             }
         } catch (e) {}
 
@@ -2113,6 +2147,85 @@
             }
             next();
             setInterval(function() { if (!screensaverOn) next(); }, 7000);
+        }
+
+        // --- Fotos da família: álbum compartilhado do iCloud (link público, sem login) ---
+        // O código do álbum vem do instalador (~/.minhatv/family_album.json). A cada hora a TV pede ao
+        // iCloud a lista de fotos, sorteia 5 e passa uma a cada 8 s.
+        var FAMILY_PHOTOS_COUNT = 5;
+        var familySlides = { imgs: [], index: -1, timer: null };
+
+        function readFamilyAlbum() {
+            try { return JSON.parse(localStorage.getItem('fmtv_family_album') || 'null'); } catch (e) { return null; }
+        }
+
+        function icloudPost(url, body) {
+            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) })
+                .then(function(res) {
+                    if (!res.ok) throw new Error('iCloud ' + res.status);
+                    return res.json();
+                });
+        }
+
+        function fetchFamilyPhotos(album) {
+            var base = '/database/1/com.apple.photos.cloud/production/';
+            return icloudPost('https://ckdatabasews.icloud.com' + base + 'public/records/resolve', { shortGUIDs: [{ value: album.key }] })
+                .then(function(data) {
+                    var shared = data.results && data.results[0];
+                    if (!shared || !shared.anonymousPublicAccess) throw new Error('álbum sem acesso público');
+                    var query = '?remapEnums=true&sharing_url_key=' + encodeURIComponent(album.key) +
+                        '&publicAccessAuthToken=' + encodeURIComponent(shared.anonymousPublicAccess.token);
+                    return icloudPost('https://' + album.host + base + 'shared/changes/zone' + query,
+                        { zones: [{ zoneID: shared.zoneID, resultsLimit: 200 }] });
+                })
+                .then(function(data) {
+                    var records = (data.zones && data.zones[0] && data.zones[0].records) || [];
+                    return records.filter(function(r) {
+                        return r.recordType === 'CPLMaster' && r.fields && r.fields.resJPEGMedRes &&
+                            !/movie|video/i.test((r.fields.itemType && r.fields.itemType.value) || '');
+                    }).map(function(r) {
+                        return r.fields.resJPEGMedRes.value.downloadURL.replace('${f}', 'foto.jpg');
+                    }).filter(function(url) { return /^https:\/\/[a-z0-9.-]+\.icloud-content\.com\//.test(url); });
+                });
+        }
+
+        function showFamilyPhotos(urls) {
+            var panel = document.getElementById('sidePhotos');
+            familySlides.imgs.forEach(function(img) { img.remove(); });
+            familySlides.imgs = shuffle(urls).slice(0, FAMILY_PHOTOS_COUNT).map(function(url) {
+                var img = document.createElement('img');
+                img.alt = '';
+                img.src = url;
+                panel.insertBefore(img, panel.firstChild);
+                return img;
+            });
+            familySlides.index = -1;
+            nextFamilyPhoto();
+        }
+
+        function nextFamilyPhoto() {
+            var imgs = familySlides.imgs;
+            if (!imgs.length) return;
+            if (familySlides.index >= 0) imgs[familySlides.index].classList.remove('active');
+            familySlides.index = (familySlides.index + 1) % imgs.length;
+            imgs[familySlides.index].classList.add('active');
+        }
+
+        function setupFamilyPhotos() {
+            var conf = PROFILE.familyPhotos;
+            if (!conf) return;
+            var album = readFamilyAlbum();
+            if (!album) return;
+            var panel = document.getElementById('sidePhotos');
+            panel.hidden = false;
+            document.getElementById('sidePhotosTitle').textContent = conf.title || '';
+            function refresh() {
+                fetchFamilyPhotos(album).then(function(urls) { if (urls.length) showFamilyPhotos(urls); })
+                    .catch(function() {}); // sem internet, continua com as fotos que já estão na tela
+            }
+            refresh();
+            setInterval(refresh, 60 * 60 * 1000);
+            setInterval(function() { if (!screensaverOn) nextFamilyPhoto(); }, 8000);
         }
 
         // --- Mensagens do perfil: uma por vez, em ordem aleatória, trocando a cada 15 s ---
@@ -3018,6 +3131,7 @@
             document.title = PROFILE.name;
         }
         setupSpecialVideo();
+        setupFamilyPhotos();
         setupPhotoCarousel();
         renderAppsShelf();
         applyTheme();

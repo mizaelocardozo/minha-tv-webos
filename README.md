@@ -10,6 +10,7 @@ Baseado no projeto [FreeMyTvWebOS](https://github.com/danielthejoker18/FreeMyTvW
 - Interface 100% em português (menus, avisos, clima e data)
 - **Destaques** no topo: carrossel animado com 4 filmes e 3 séries lançados recentemente e bem avaliados, sorteados entre Netflix, Prime Video, Disney+, Globoplay e HBO Max, mais um **DESTAQUE** extra de série policial (de preferência do Prime Video); renova a cada 3 dias. Títulos da Netflix abrem direto na página do título
 - Bloco **Tuti** na prateleira: OK abre a foto em tela cheia
+- **Fotos da família** ao lado dos destaques: 5 fotos sorteadas de um álbum compartilhado do iCloud (link público). O link fica em `~/.minhatv/family_album.json` (`{"key": "<código do link>", "host": "pNN-ckdatabasews.icloud.com"}`) e o `install.py` entrega à TV — não vai para o GitHub
 - **Clima** de Cidade Ocidental-GO (padrão) com previsão das próximas horas, abaixo dos apps
 - **Principais notícias**: 3 destaques das últimas 3 horas dos canais da CNN Brasil, g1, UOL e Jovem Pan no YouTube (os mais assistidos por hora, um por portal); OK abre o vídeo no YouTube
 - Tema **Preto OLED** como padrão

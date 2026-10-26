@@ -171,6 +171,14 @@ def install_app(tv_ip, passphrase=None, profile=None):
     if tmdb_key and all(c.isalnum() or c in "._-" for c in tmdb_key):
         launch_payload["params"] = {"tmdbKey": tmdb_key}
         print("[*] Enviando a chave TMDB para o catálogo...")
+    # Álbum compartilhado do iCloud para as fotos da família (fica fora do repositório).
+    album_file = os.path.expanduser("~/.minhatv/family_album.json")
+    if not profile and os.path.exists(album_file):
+        with open(album_file, encoding="utf-8") as f:
+            album = json.load(f)
+        if all(c.isalnum() or c in "._-" for c in album.get("key", "") + album.get("host", "")):
+            launch_payload.setdefault("params", {})["familyAlbum"] = {"key": album["key"], "host": album["host"]}
+            print("[*] Enviando o álbum de fotos da família...")
     launch_payload = json.dumps(launch_payload)
     launch_remote_cmd = f"timeout 15 luna-send-pub -n 1 luna://com.webos.applicationManager/launch '{launch_payload}'"
     launch_res = run_luna(launch_remote_cmd)
