@@ -7,5 +7,7 @@ window.MINHATV_PROFILE = {
     family: { id: 'minhatv.tuti', name: 'Tuti', tile: 'assets/tuti-tile.jpg', photo: 'assets/tuti.jpg' },
     // Fotos da família ao lado dos destaques. O link do álbum do iCloud fica fora do GitHub:
     // ~/.minhatv/family_album.json, entregue à TV pelo scripts/install.py.
-    familyPhotos: { title: 'Família' }
+    familyPhotos: { title: 'Família' },
+    // Versículo do dia da Bíblia Online (NVI) no topo, atualizado sozinho.
+    verseOfDay: true
 };

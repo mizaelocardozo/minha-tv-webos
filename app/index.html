@@ -89,6 +89,35 @@
             align-items: center;
         }
 
+        /* Versículo do dia no topo (perfil verseOfDay), entre o nome e o relógio. */
+        .verse-of-day {
+            flex: 1;
+            min-width: 0;
+            margin: 0 40px;
+            text-align: center;
+            transition: opacity 0.8s ease;
+        }
+        .verse-of-day[hidden] { display: none; }
+        .verse-of-day.fading { opacity: 0; }
+        .verse-text {
+            font-family: Georgia, "Times New Roman", serif;
+            font-style: italic;
+            font-size: 19px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .verse-ref {
+            margin-top: 3px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
         .brand-group {
             display: flex;
             align-items: center;
@@ -1215,6 +1244,10 @@
                 <div class="brand-title" id="brandTitle">Minha TV</div>
                 <div class="tag-pill" id="themeBadge">OLED • 60 FPS</div>
             </div>
+            <div class="verse-of-day" id="verseOfDay" hidden>
+                <div class="verse-text" id="verseText"></div>
+                <div class="verse-ref" id="verseRef"></div>
+            </div>
             <div class="header-info">
                 <button class="header-btn nav-item" id="customizeBtn" data-tag="Personalizar" data-title="Prateleira e Configurações" data-desc="Escolha quais apps instalados aparecem na prateleira, a cidade do clima e a chave do TMDB.">
                     <span>⚙️ Personalizar</span>
@@ -2228,6 +2261,61 @@
             setInterval(function() { if (!screensaverOn) nextFamilyPhoto(); }, 8000);
         }
 
+        // --- Versículo do dia (Bíblia Online, NVI) ---
+        // A TV lê a página da NVI e pega os "Versículos do dia" (texto e referência vêm prontos no botão
+        // de compartilhar de cada um). Confere a cada 3 h e guarda o último para quando estiver sem internet.
+        var VERSE_URL = 'https://www.bibliaonline.com.br/nvi';
+        var verseState = { list: [], index: 0 };
+
+        function decodeHtml(text) {
+            return new DOMParser().parseFromString('<p>' + text + '</p>', 'text/html').body.textContent;
+        }
+
+        function parseVerses(page) {
+            var verses = [];
+            var re = /&quot;text&quot;:\[0,&quot;([\s\S]*?)&quot;\],&quot;label&quot;:\[0,&quot;([\s\S]*?)&quot;\]/g;
+            var m;
+            while ((m = re.exec(page)) && verses.length < 3) {
+                var text = decodeHtml(m[1]).replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\s+/g, ' ').trim();
+                var ref = decodeHtml(m[2]).trim();
+                if (text && /\d+:\d+/.test(ref)) verses.push({ text: text, ref: ref });
+            }
+            return verses;
+        }
+
+        function showVerse() {
+            var v = verseState.list[verseState.index % verseState.list.length];
+            if (!v) return;
+            document.getElementById('verseText').textContent = '“' + v.text + '”';
+            document.getElementById('verseRef').textContent = v.ref + ' • NVI';
+        }
+
+        function setupVerseOfDay() {
+            if (!PROFILE.verseOfDay) return;
+            var box = document.getElementById('verseOfDay');
+            try { verseState.list = JSON.parse(localStorage.getItem('fmtv_verses') || '[]'); } catch (e) {}
+            if (verseState.list.length) { box.hidden = false; showVerse(); }
+            function refresh() {
+                fetch(VERSE_URL).then(function(res) { return res.text(); }).then(function(page) {
+                    var verses = parseVerses(page);
+                    if (!verses.length) return;
+                    verseState.list = verses;
+                    verseState.index = 0;
+                    try { localStorage.setItem('fmtv_verses', JSON.stringify(verses)); } catch (e) {}
+                    box.hidden = false;
+                    showVerse();
+                }).catch(function() {});
+            }
+            refresh();
+            setInterval(refresh, 3 * 60 * 60 * 1000);
+            // Dias com mais de um versículo: alterna a cada 20 s.
+            setInterval(function() {
+                if (verseState.list.length < 2 || screensaverOn) return;
+                box.classList.add('fading');
+                setTimeout(function() { verseState.index++; showVerse(); box.classList.remove('fading'); }, 800);
+            }, 20000);
+        }
+
         // --- Mensagens do perfil: uma por vez, em ordem aleatória, trocando a cada 15 s ---
         function setupMessages() {
             var conf = PROFILE.messages;
@@ -3130,6 +3218,7 @@
             document.getElementById('brandTitle').textContent = PROFILE.name;
             document.title = PROFILE.name;
         }
+        setupVerseOfDay();
         setupSpecialVideo();
         setupFamilyPhotos();
         setupPhotoCarousel();
